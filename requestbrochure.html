@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Brochure</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: '맑은 고딕', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #440b86;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .form-section h3 {
+            margin-top: 0;
+            color: #440b86;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group.expand {
+            flex: 1;
+        }
+
+        .form-group.narrow {
+            max-width: 300px;
+            width: 300px;
+            flex-shrink: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .row-container {
+            border: 2px solid #440b86;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: white;
+            position: relative;
+        }
+
+        .row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .row-number {
+            font-weight: bold;
+            color: #440b86;
+            font-size: 16px;
+        }
+
+        .schoolname-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #440b86;
+        }
+
+        .schoolname-input::placeholder {
+            color: #999;
+            font-weight: normal;
+        }
+
+        .row-fields {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .row-fields.full-width {
+            flex-direction: column;
+        }
+
+        .row-fields.full-width .form-group {
+            width: 100%;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #440b86;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0ca22c;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .btn-add-row {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .invoice-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .invoice-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .invoice-group input {
+            width: 150px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .invoice-group .btn {
+            flex-shrink: 0;
+        }
+
+        .invoice-add-btn {
+            margin-top: 0;
+        }
+
+        .brochure-container {
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .brochure-item {
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .brochure-item-header {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 5px;
+        }
+
+        .brochure-item-header .form-group {
+            margin-bottom: 0;
+        }
+
+        .brochure-item-header .form-group.expand {
+            flex: 1;
+        }
+
+        .brochure-item-header .form-group.narrow {
+            max-width: 300px;
+            flex-shrink: 0;
+            width: 300px;
+        }
+
+        .brochure-item-fields {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .brochure-item-fields .form-group {
+            margin-bottom: 0;
+        }
+
+        .brochure-item-fields .form-group.expand {
+            flex: 1;
+        }
+
+        .brochure-item-fields .form-group.narrow {
+            max-width: 300px;
+            flex-shrink: 0;
+            width: 300px;
+        }
+
+        .brochure-add-btn {
+            margin-top: 0;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .nav-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #440b86;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: #0ca22c;
+        }
+
+        @media screen and (max-width: 768px) {
+            .row-fields {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="requestbrochure-list.html" class="nav-link">📋 신청 내역 조회</a>
+        <a href="requestbrochure logistics.html" class="nav-link">📋 운송장 번호 입력</a>
+        <h1>GrapeSEED Brochure Request</h1>
+        <p class="subtitle">필요한 브로셔를 신청하세요. 신청하신 브로셔는 최대 3일 이내에 발송됩니다.</p>
+        
+        <div id="alert" class="alert"></div>
+
+        <form id="brochureForm">
+            <!-- 브로셔 신청 행들 -->
+            <div class="form-section">
+                <h3>브로셔 신청</h3>
+                <div id="rowsContainer">
+                    <!-- 행들이 여기에 동적으로 추가됩니다 -->
+                </div>
+                <button type="button" class="btn btn-success btn-add-row" onclick="addRow()">+ 행 추가</button>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-submit">저장하기</button>
+        </form>
+    </div>
+
+    <script>
+        let rowCount = 0;
+
+        // 브로셔 옵션 목록
+        const brochureOptions = [
+            { value: '1', text: 'LittleSEED Play in English' },
+            { value: '2', text: 'Think in English, Speak in English' },
+            { value: '3', text: '어린이 영어교육, 왜 확실한 구어습득이 필요한가?' },
+            { value: '4', text: 'GrapeSEED Elementary' },
+            { value: '5', text: 'Information for Parents' },
+            { value: '6', text: 'LittleSEED at Home Guide' },
+            { value: '7', text: '성공적인 GrapeSEED를 위한 가이드' },
+            { value: '8', text: 'GS Baby' },
+            { value: '9', text: 'GS Online 리플렛' }
+        ];
+
+        // 행 추가 함수
+        function addRow() {
+            rowCount++;
+            const rowsContainer = document.getElementById('rowsContainer');
+            
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'row-container';
+            rowDiv.id = `row-${rowCount}`;
+            
+            // 브로셔 선택 옵션 생성
+            let brochureOptionsHtml = '<option value="">선택하세요</option>';
+            brochureOptions.forEach(option => {
+                brochureOptionsHtml += `<option value="${option.value}">${option.text}</option>`;
+            });
+
+            rowDiv.innerHTML = `
+                <div class="row-header">
+                    <div class="form-group">
+                        <label for="date-${rowCount}">날짜</label>
+                        <input type="date" id="date-${rowCount}" name="date-${rowCount}" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="schoolname-${rowCount}">기관명</label>
+                        <input type="text" id="schoolname-${rowCount}" name="schoolname-${rowCount}" class="schoolname-input" placeholder="기관명을 입력하세요" required>
+                    </div>
+                    <button type="button" class="btn btn-danger" onclick="removeRow(${rowCount})">삭제</button>
+                </div>
+                <div class="row-fields">
+                    <div class="form-group expand">
+                        <label for="address-${rowCount}">주소</label>
+                        <input type="text" id="address-${rowCount}" name="address-${rowCount}" required>
+                    </div>
+                    <div class="form-group narrow">
+                        <label for="phone-${rowCount}">전화번호</label>
+                        <input type="tel" id="phone-${rowCount}" name="phone-${rowCount}" placeholder="010-0000-0000" oninput="formatPhoneNumber(this)" maxlength="13" required>
+                    </div>
+                </div>
+                <div class="row-fields full-width">
+                    <div class="form-group">
+                        <div class="brochure-container" id="brochure-container-${rowCount}">
+                            <!-- 브로셔 항목들이 여기에 동적으로 추가됩니다 -->
+                        </div>
+                        <button type="button" class="btn btn-success btn-small brochure-add-btn" onclick="addBrochureItem(${rowCount})">+ 브로셔 추가</button>
+                    </div>
+                </div>
+                <div class="row-fields full-width">
+                    <div class="form-group">
+                        <label>송장번호(화성 물류창고 입력)</label>
+                        <div class="invoice-container" id="invoice-container-${rowCount}">
+                            <!-- 송장번호 필드들이 여기에 동적으로 추가됩니다 -->
+                        </div>
+                        <!-- 송장번호는 logistics 페이지에서만 추가 가능 -->
+                    </div>
+                </div>
+            `;
+            
+            rowsContainer.appendChild(rowDiv);
+            // 기본 브로셔 항목 하나 추가
+            addBrochureItem(rowCount, true);
+            // 송장번호 필드는 비활성화 (logistics 페이지에서만 추가 가능)
+            addInvoiceField(rowCount, []);
+            updateRowNumbers();
+            
+            // 입력 필드 변경 시 송장번호 로드 시도
+            setTimeout(() => {
+                const dateInput = document.getElementById(`date-${rowCount}`);
+                const schoolnameInput = document.getElementById(`schoolname-${rowCount}`);
+                const addressInput = document.getElementById(`address-${rowCount}`);
+                const phoneInput = document.getElementById(`phone-${rowCount}`);
+                
+                const checkAndLoad = () => {
+                    if (dateInput.value && schoolnameInput.value && addressInput.value && 
+                        phoneInput.value) {
+                        loadInvoiceNumbers(rowCount);
+                    }
+                };
+                
+                [dateInput, schoolnameInput, addressInput, phoneInput].forEach(input => {
+                    if (input) {
+                        input.addEventListener('change', checkAndLoad);
+                        input.addEventListener('blur', checkAndLoad);
+                    }
+                });
+            }, 100);
+        }
+
+        // 행 삭제 함수
+        function removeRow(rowId) {
+            const row = document.getElementById(`row-${rowId}`);
+            if (row) {
+                row.remove();
+                updateRowNumbers();
+            }
+        }
+
+        // 행 번호 업데이트 함수 (더 이상 필요 없지만 호환성을 위해 유지)
+        function updateRowNumbers() {
+            // 기관명 입력 필드로 변경되어 더 이상 번호 업데이트 불필요
+        }
+
+        // 브로셔 항목 추가 함수
+        function addBrochureItem(rowId, isDefault = false) {
+            const container = document.getElementById(`brochure-container-${rowId}`);
+            if (!container) return;
+
+            const brochureCount = container.querySelectorAll('.brochure-item').length;
+            const itemId = `brochure-${rowId}-${brochureCount + 1}`;
+            
+            // 브로셔 선택 옵션 생성
+            let brochureOptionsHtml = '<option value="">선택하세요</option>';
+            brochureOptions.forEach(option => {
+                brochureOptionsHtml += `<option value="${option.value}">${option.text}</option>`;
+            });
+
+            const brochureItem = document.createElement('div');
+            brochureItem.className = 'brochure-item';
+            brochureItem.id = `brochure-item-${itemId}`;
+            
+            brochureItem.innerHTML = `
+                <div class="brochure-item-header">
+                    <div class="form-group expand">
+                        <label for="${itemId}">브로셔</label>
+                    </div>
+                    <div class="form-group narrow">
+                        <label for="quantity-${itemId}">수량</label>
+                    </div>
+                    ${!isDefault ? `<button type="button" class="btn btn-danger btn-small" onclick="removeBrochureItem('${itemId}')" style="margin-bottom: 0;">삭제</button>` : '<div style="width: 60px;"></div>'}
+                </div>
+                <div class="brochure-item-fields">
+                    <div class="form-group expand">
+                        <select id="${itemId}" name="${itemId}" required>
+                            ${brochureOptionsHtml}
+                        </select>
+                    </div>
+                    <div class="form-group narrow">
+                        <input type="number" id="quantity-${itemId}" name="quantity-${itemId}" min="1" required>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(brochureItem);
+        }
+
+        // 브로셔 항목 삭제 함수
+        function removeBrochureItem(itemId) {
+            const item = document.getElementById(`brochure-item-${itemId}`);
+            if (item) {
+                item.remove();
+            }
+        }
+
+        // 브로셔 항목들 수집 함수
+        function collectBrochureItems(rowId) {
+            const container = document.getElementById(`brochure-container-${rowId}`);
+            if (!container) return [];
+
+            const items = [];
+            const brochureItems = container.querySelectorAll('.brochure-item');
+            
+            brochureItems.forEach(item => {
+                const select = item.querySelector('select');
+                const input = item.querySelector('input[type="number"]');
+                
+                if (select && input && select.value && input.value) {
+                    items.push({
+                        brochure: select.value,
+                        brochureName: select.options[select.selectedIndex].text,
+                        quantity: parseInt(input.value)
+                    });
+                }
+            });
+            
+            return items;
+        }
+
+        // 전화번호 자동 포맷팅 함수
+        function formatPhoneNumber(input) {
+            // 숫자만 추출
+            let value = input.value.replace(/[^\d]/g, '');
+            
+            // 전화번호 포맷팅 (000-0000-0000)
+            if (value.length <= 3) {
+                input.value = value;
+            } else if (value.length <= 7) {
+                input.value = value.slice(0, 3) + '-' + value.slice(3);
+            } else if (value.length <= 11) {
+                input.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7);
+            } else {
+                // 11자리 초과 시 11자리까지만
+                input.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+            }
+        }
+
+        // 송장번호 필드 추가 함수 (읽기 전용으로 표시)
+        function addInvoiceField(rowId, invoices = []) {
+            const container = document.getElementById(`invoice-container-${rowId}`);
+            if (!container) return;
+
+            // 기존 내용 제거
+            container.innerHTML = '';
+
+            if (invoices && invoices.length > 0) {
+                invoices.forEach((invoice, index) => {
+                    const invoiceGroup = document.createElement('div');
+                    invoiceGroup.className = 'invoice-group';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = invoice;
+                    input.disabled = true;
+                    input.style.backgroundColor = '#f5f5f5';
+                    input.style.cursor = 'not-allowed';
+                    
+                    invoiceGroup.appendChild(input);
+                    container.appendChild(invoiceGroup);
+                });
+            } else {
+                // 송장번호가 없을 때 표시
+                const emptyMsg = document.createElement('div');
+                emptyMsg.textContent = '송장번호가 아직 등록되지 않았습니다.';
+                emptyMsg.style.color = '#999';
+                emptyMsg.style.fontStyle = 'italic';
+                emptyMsg.style.padding = '8px';
+                container.appendChild(emptyMsg);
+            }
+        }
+
+        // 저장된 신청 데이터에서 송장번호 로드
+        function loadInvoiceNumbers(rowId) {
+            // 해당 행의 데이터와 일치하는 신청 찾기
+            const date = document.getElementById(`date-${rowId}`)?.value;
+            const schoolname = document.getElementById(`schoolname-${rowId}`)?.value;
+            const address = document.getElementById(`address-${rowId}`)?.value;
+            const phone = document.getElementById(`phone-${rowId}`)?.value;
+
+            if (!date || !schoolname || !address || !phone) {
+                return;
+            }
+
+            // 로컬 스토리지에서 모든 신청 내역 가져오기
+            const allRequests = JSON.parse(localStorage.getItem('brochure_requests') || '[]');
+            
+            // 일치하는 신청 찾기 (날짜, 기관명, 주소, 전화번호로 매칭)
+            for (let requestGroup of allRequests) {
+                for (let request of requestGroup.requests || []) {
+                    if (request.date === date &&
+                        request.schoolname === schoolname &&
+                        request.address === address &&
+                        request.phone === phone) {
+                        // 송장번호 표시
+                        if (request.invoices && request.invoices.length > 0) {
+                            addInvoiceField(rowId, request.invoices);
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+
+        // 송장번호 필드들 수집 함수
+        function collectInvoiceFields(rowId) {
+            const container = document.getElementById(`invoice-container-${rowId}`);
+            if (!container) return [];
+
+            const invoices = [];
+            const invoiceInputs = container.querySelectorAll('input[type="text"]');
+            invoiceInputs.forEach(input => {
+                if (input.value.trim()) {
+                    invoices.push(input.value.trim());
+                }
+            });
+            return invoices;
+        }
+
+        // 알림 표시 함수
+        function showAlert(message, type = 'success') {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // 폼 제출 처리
+        document.getElementById('brochureForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 행이 하나도 없으면 경고
+            const rows = document.querySelectorAll('.row-container');
+            if (rows.length === 0) {
+                showAlert('최소 하나의 브로셔를 신청해주세요.', 'danger');
+                return;
+            }
+
+            // 모든 행의 데이터 수집
+            const requests = [];
+            rows.forEach((row) => {
+                // 각 행의 ID 추출 (row-1, row-2 등에서 숫자 부분만)
+                const rowId = row.id.replace('row-', '');
+                const date = document.getElementById(`date-${rowId}`).value;
+                const schoolname = document.getElementById(`schoolname-${rowId}`).value;
+                const address = document.getElementById(`address-${rowId}`).value;
+                const phone = document.getElementById(`phone-${rowId}`).value;
+                const brochures = collectBrochureItems(rowId);
+                const invoices = collectInvoiceFields(rowId);
+                
+                // 필수 필드 검증
+                if (date && schoolname && address && phone && brochures.length > 0) {
+                    requests.push({
+                        date: date,
+                        schoolname: schoolname,
+                        address: address,
+                        phone: phone,
+                        brochures: brochures, // 배열로 변경
+                        invoices: invoices
+                    });
+                }
+            });
+
+            if (requests.length === 0) {
+                showAlert('유효한 브로셔 신청이 없습니다. 모든 필수 항목을 입력해주세요.', 'danger');
+                return;
+            }
+
+            // 데이터 저장 (로컬 스토리지 사용)
+            const requestData = {
+                requests: requests,
+                submittedAt: new Date().toISOString()
+            };
+
+            // 기존 신청 내역 가져오기
+            let allRequests = JSON.parse(localStorage.getItem('brochure_requests') || '[]');
+            allRequests.push(requestData);
+            localStorage.setItem('brochure_requests', JSON.stringify(allRequests));
+
+            showAlert('브로셔 신청이 완료되었습니다!', 'success');
+            
+            // 폼 초기화
+            document.getElementById('rowsContainer').innerHTML = '';
+            rowCount = 0;
+            addRow(); // 기본 행 하나 다시 추가
+        });
+
+        // 페이지 로드 시 기본 행 하나 추가
+        window.addEventListener('DOMContentLoaded', function() {
+            addRow();
+        });
+    </script>
+</body>
+</html>

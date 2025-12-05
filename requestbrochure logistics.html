@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Brochure</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.5.0/dist/xlsx.full.min.js"></script>
+    <script>
+        // xlsx-js-style이 로드되지 않은 경우 대체
+        if (typeof XLSX === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>');
+        }
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: '맑은 고딕', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #440b86;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .form-section h3 {
+            margin-top: 0;
+            color: #440b86;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group.expand {
+            flex: 1;
+        }
+
+        .form-group.narrow {
+            max-width: 300px;
+            flex-shrink: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .row-container {
+            border: 2px solid #440b86;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: white;
+            position: relative;
+        }
+
+        .row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .row-number {
+            font-weight: bold;
+            color: #440b86;
+            font-size: 16px;
+        }
+
+        .schoolname-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #440b86;
+        }
+
+        .schoolname-input::placeholder {
+            color: #999;
+            font-weight: normal;
+        }
+
+        .row-fields {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .row-fields.full-width {
+            grid-template-columns: 1fr;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #440b86;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0ca22c;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .btn-add-row {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .invoice-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .invoice-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .invoice-group input {
+            width: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .invoice-group .btn {
+            flex-shrink: 0;
+        }
+
+        .invoice-add-btn {
+            margin-top: 0;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 30px 0;
+            gap: 10px;
+        }
+
+        .pagination {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            gap: 5px;
+        }
+
+        .pagination li {
+            display: inline-block;
+        }
+
+        .pagination a {
+            display: block;
+            padding: 8px 12px;
+            text-decoration: none;
+            color: #440b86;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .pagination a:hover {
+            background-color: #440b86;
+            color: white;
+        }
+
+        .pagination .active a {
+            background-color: #440b86;
+            color: white;
+        }
+
+        .pagination .disabled a {
+            color: #ccc;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            color: #666;
+            font-size: 14px;
+            margin: 0 15px;
+        }
+
+        @media screen and (max-width: 768px) {
+            .row-fields {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="requestbrochure-completed.html" class="nav-link" style="display: inline-block; margin-bottom: 20px; color: #440b86; text-decoration: none; font-weight: bold; transition: color 0.3s;">📦 운송장 입력 완료 내역</a>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <h1 style="margin: 0;">GrapeSEED Brochure Logistics</h1>
+                <p class="subtitle" style="margin: 5px 0 0 0;">엑셀 파일을 먼저 다운로드 받은 후 신청된 브로셔의 운송장 번호를 입력하세요.</p>
+            </div>
+            <button type="button" class="btn btn-success" onclick="downloadExcel()" style="margin-left: 20px;">📥 엑셀 다운로드</button>
+        </div>
+        
+        <div id="alert" class="alert"></div>
+
+        <form id="brochureForm">
+            <!-- 브로셔 신청 행들 -->
+            <div class="form-section">
+                <h3>신청 내역 및 운송장 번호 입력</h3>
+                <div id="rowsContainer">
+                    <!-- 저장된 신청 내역이 여기에 동적으로 추가됩니다 -->
+                </div>
+                <div class="pagination-container">
+                    <div class="pagination-info" id="paginationInfo"></div>
+                    <ul class="pagination" id="pagination">
+                        <!-- 페이지네이션 버튼이 여기에 동적으로 추가됩니다 -->
+                    </ul>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-submit">운송장 번호 저장</button>
+        </form>
+    </div>
+
+    <script>
+        let rowCount = 0;
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let allPendingRequests = [];
+
+        // 브로셔 옵션 목록
+        const brochureOptions = [
+            { value: '1', text: 'LittleSEED Play in English' },
+            { value: '2', text: 'Think in English, Speak in English' },
+            { value: '3', text: '어린이 영어교육, 왜 확실한 구어습득이 필요한가?' },
+            { value: '4', text: 'GrapeSEED Elementary' },
+            { value: '5', text: 'Information for Parents' },
+            { value: '6', text: 'LittleSEED at Home Guide' },
+            { value: '7', text: '성공적인 GrapeSEED를 위한 가이드' },
+            { value: '8', text: 'GS Baby' },
+            { value: '9', text: 'GS Online 리플렛' }
+        ];
+
+        // 저장된 신청 데이터로 행 추가 함수
+        function addRowFromData(request, requestIndex, itemIndex) {
+            rowCount++;
+            const rowsContainer = document.getElementById('rowsContainer');
+            
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'row-container';
+            rowDiv.id = `row-${rowCount}`;
+            rowDiv.dataset.requestIndex = requestIndex;
+            rowDiv.dataset.itemIndex = itemIndex;
+            
+            // 브로셔 선택 옵션 생성
+            let brochureOptionsHtml = '<option value="">선택하세요</option>';
+            brochureOptions.forEach(option => {
+                const selected = option.value === request.brochure ? 'selected' : '';
+                brochureOptionsHtml += `<option value="${option.value}" ${selected}>${option.text}</option>`;
+            });
+
+            rowDiv.innerHTML = `
+                <div class="row-header">
+                    <div class="form-group">
+                        <label for="date-${rowCount}">날짜</label>
+                        <input type="date" id="date-${rowCount}" name="date-${rowCount}" value="${request.date}" disabled style="background-color: #f5f5f5; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="schoolname-${rowCount}">기관명</label>
+                        <input type="text" id="schoolname-${rowCount}" name="schoolname-${rowCount}" class="schoolname-input" value="${request.schoolname}" disabled style="background-color: #f5f5f5; cursor: not-allowed;">
+                    </div>
+                </div>
+                <div class="row-fields">
+                    <div class="form-group expand">
+                        <label for="address-${rowCount}">주소</label>
+                        <input type="text" id="address-${rowCount}" name="address-${rowCount}" value="${request.address}" disabled style="background-color: #f5f5f5; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group narrow">
+                        <label for="phone-${rowCount}">전화번호</label>
+                        <input type="tel" id="phone-${rowCount}" name="phone-${rowCount}" value="${request.phone}" disabled style="background-color: #f5f5f5; cursor: not-allowed;">
+                    </div>
+                </div>
+                <div class="row-fields full-width">
+                    <div class="form-group">
+                        <label>브로셔 신청 내역</label>
+                        <div id="brochure-list-${rowCount}" style="padding: 10px; background-color: #f9f9f9; border-radius: 4px;">
+                            ${request.brochures && request.brochures.length > 0 
+                                ? request.brochures.map(b => `<div style="margin-bottom: 5px;">${b.brochureName} - ${b.quantity}권</div>`).join('')
+                                : '브로셔 정보 없음'}
+                        </div>
+                    </div>
+                </div>
+                <div class="row-fields full-width">
+                    <div class="form-group">
+                        <label>운송장 번호</label>
+                        <div class="invoice-container" id="invoice-container-${rowCount}">
+                            <!-- 송장번호 필드들이 여기에 동적으로 추가됩니다 -->
+                        </div>
+                        <button type="button" class="btn btn-success btn-small invoice-add-btn" onclick="addInvoiceField(${rowCount})">+ 운송장 번호 추가</button>
+                    </div>
+                </div>
+            `;
+            
+            rowsContainer.appendChild(rowDiv);
+            // 저장된 송장번호가 있으면 표시, 없으면 기본 필드 하나 추가
+            if (request.invoices && request.invoices.length > 0) {
+                request.invoices.forEach((invoice, index) => {
+                    addInvoiceField(rowCount, index === 0);
+                    const input = document.querySelector(`#invoice-container-${rowCount} input[type="text"]:last-of-type`);
+                    if (input) {
+                        input.value = invoice;
+                    }
+                });
+            } else {
+                addInvoiceField(rowCount, true);
+            }
+        }
+
+        // 행 삭제 함수
+        function removeRow(rowId) {
+            const row = document.getElementById(`row-${rowId}`);
+            if (row) {
+                row.remove();
+                updateRowNumbers();
+            }
+        }
+
+        // 행 번호 업데이트 함수 (더 이상 필요 없지만 호환성을 위해 유지)
+        function updateRowNumbers() {
+            // 기관명 입력 필드로 변경되어 더 이상 번호 업데이트 불필요
+        }
+
+        // 전화번호 자동 포맷팅 함수
+        function formatPhoneNumber(input) {
+            // 숫자만 추출
+            let value = input.value.replace(/[^\d]/g, '');
+            
+            // 전화번호 포맷팅 (000-0000-0000)
+            if (value.length <= 3) {
+                input.value = value;
+            } else if (value.length <= 7) {
+                input.value = value.slice(0, 3) + '-' + value.slice(3);
+            } else if (value.length <= 11) {
+                input.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7);
+            } else {
+                // 11자리 초과 시 11자리까지만
+                input.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+            }
+        }
+
+        // 송장번호 필드 추가 함수
+        function addInvoiceField(rowId, isDefault = false) {
+            const container = document.getElementById(`invoice-container-${rowId}`);
+            if (!container) return;
+
+            const invoiceCount = container.querySelectorAll('.invoice-group').length;
+            const invoiceId = `invoice-${rowId}-${invoiceCount + 1}`;
+            
+            const invoiceGroup = document.createElement('div');
+            invoiceGroup.className = 'invoice-group';
+            invoiceGroup.id = `invoice-group-${invoiceId}`;
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = invoiceId;
+            input.name = invoiceId;
+            input.placeholder = '송장번호를 입력하세요';
+            
+            invoiceGroup.appendChild(input);
+            
+            // 기본 필드가 아니면 삭제 버튼 추가
+            if (!isDefault) {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'btn btn-danger btn-small';
+                deleteBtn.textContent = '삭제';
+                deleteBtn.onclick = function() {
+                    invoiceGroup.remove();
+                };
+                invoiceGroup.appendChild(deleteBtn);
+            }
+            
+            container.appendChild(invoiceGroup);
+        }
+
+        // 송장번호 필드들 수집 함수
+        function collectInvoiceFields(rowId) {
+            const container = document.getElementById(`invoice-container-${rowId}`);
+            if (!container) return [];
+
+            const invoices = [];
+            const invoiceInputs = container.querySelectorAll('input[type="text"]');
+            invoiceInputs.forEach(input => {
+                if (input.value.trim()) {
+                    invoices.push(input.value.trim());
+                }
+            });
+            return invoices;
+        }
+
+        // 알림 표시 함수
+        function showAlert(message, type = 'success') {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // 폼 제출 처리 - 송장번호만 업데이트
+        document.getElementById('brochureForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 행이 하나도 없으면 경고
+            const rows = document.querySelectorAll('.row-container');
+            if (rows.length === 0) {
+                showAlert('저장된 신청 내역이 없습니다.', 'danger');
+                return;
+            }
+
+            // 로컬 스토리지에서 모든 신청 내역 가져오기
+            let allRequests = JSON.parse(localStorage.getItem('brochure_requests') || '[]');
+            
+            if (allRequests.length === 0) {
+                showAlert('저장된 신청 내역이 없습니다.', 'danger');
+                return;
+            }
+
+            // 각 행의 송장번호 업데이트
+            let updatedCount = 0;
+            rows.forEach((row) => {
+                const rowId = row.id.replace('row-', '');
+                const requestIndex = parseInt(row.dataset.requestIndex);
+                const itemIndex = parseInt(row.dataset.itemIndex);
+                
+                // 송장번호 수집
+                const invoices = collectInvoiceFields(rowId);
+                
+                // 해당 신청 내역 찾아서 송장번호 업데이트
+                if (allRequests[requestIndex] && allRequests[requestIndex].requests[itemIndex]) {
+                    allRequests[requestIndex].requests[itemIndex].invoices = invoices;
+                    updatedCount++;
+                }
+            });
+
+            // 업데이트된 데이터 저장
+            localStorage.setItem('brochure_requests', JSON.stringify(allRequests));
+
+            showAlert(`운송장 번호가 ${updatedCount}개 신청에 저장되었습니다!`, 'success');
+            
+            // 목록 다시 로드 (운송장 번호가 입력된 항목은 자동으로 제거됨)
+            setTimeout(() => {
+                loadSavedRequests();
+            }, 500);
+        });
+
+        // 저장된 신청 내역 로드 함수 (운송장 번호가 입력되지 않은 항목만 표시)
+        function loadSavedRequests() {
+            const allRequests = JSON.parse(localStorage.getItem('brochure_requests') || '[]');
+            const rowsContainer = document.getElementById('rowsContainer');
+            rowsContainer.innerHTML = '';
+
+            if (allRequests.length === 0) {
+                rowsContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">저장된 신청 내역이 없습니다.</p>';
+                document.getElementById('pagination').innerHTML = '';
+                document.getElementById('paginationInfo').textContent = '';
+                return;
+            }
+
+            // 운송장 번호가 입력되지 않은 신청 내역 수집
+            allPendingRequests = [];
+            allRequests.forEach((requestGroup, requestIndex) => {
+                if (requestGroup.requests && requestGroup.requests.length > 0) {
+                    requestGroup.requests.forEach((request, itemIndex) => {
+                        // 운송장 번호가 없거나 비어있는 경우만 수집
+                        if (!request.invoices || request.invoices.length === 0 || 
+                            request.invoices.every(inv => !inv || inv.trim() === '')) {
+                            allPendingRequests.push({
+                                request: request,
+                                requestIndex: requestIndex,
+                                itemIndex: itemIndex
+                            });
+                        }
+                    });
+                }
+            });
+
+            if (allPendingRequests.length === 0) {
+                rowsContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">운송장 번호 입력이 필요한 신청 내역이 없습니다.</p>';
+                document.getElementById('pagination').innerHTML = '';
+                document.getElementById('paginationInfo').textContent = '';
+                return;
+            }
+
+            // 페이지네이션 적용
+            currentPage = 1;
+            displayPagedRequests();
+        }
+
+        // 페이지네이션 적용된 신청 내역 표시
+        function displayPagedRequests() {
+            const rowsContainer = document.getElementById('rowsContainer');
+            rowsContainer.innerHTML = '';
+
+            const totalItems = allPendingRequests.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageItems = allPendingRequests.slice(startIndex, endIndex);
+
+            // 현재 페이지의 항목만 표시
+            pageItems.forEach(item => {
+                addRowFromData(item.request, item.requestIndex, item.itemIndex);
+            });
+
+            // 페이지네이션 UI 업데이트
+            updatePagination(totalPages, totalItems);
+        }
+
+        // 페이지네이션 UI 업데이트
+        function updatePagination(totalPages, totalItems) {
+            const pagination = document.getElementById('pagination');
+            const paginationInfo = document.getElementById('paginationInfo');
+            
+            pagination.innerHTML = '';
+            
+            if (totalPages <= 1) {
+                paginationInfo.textContent = `총 ${totalItems}개`;
+                return;
+            }
+
+            // 이전 버튼
+            const prevLi = document.createElement('li');
+            prevLi.className = currentPage === 1 ? 'disabled' : '';
+            prevLi.innerHTML = `<a onclick="goToPage(${currentPage - 1})">이전</a>`;
+            pagination.appendChild(prevLi);
+
+            // 페이지 번호들
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            if (startPage > 1) {
+                const firstLi = document.createElement('li');
+                firstLi.innerHTML = `<a onclick="goToPage(1)">1</a>`;
+                pagination.appendChild(firstLi);
+                if (startPage > 2) {
+                    const dotsLi = document.createElement('li');
+                    dotsLi.className = 'disabled';
+                    dotsLi.innerHTML = '<a>...</a>';
+                    pagination.appendChild(dotsLi);
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const li = document.createElement('li');
+                li.className = i === currentPage ? 'active' : '';
+                li.innerHTML = `<a onclick="goToPage(${i})">${i}</a>`;
+                pagination.appendChild(li);
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const dotsLi = document.createElement('li');
+                    dotsLi.className = 'disabled';
+                    dotsLi.innerHTML = '<a>...</a>';
+                    pagination.appendChild(dotsLi);
+                }
+                const lastLi = document.createElement('li');
+                lastLi.innerHTML = `<a onclick="goToPage(${totalPages})">${totalPages}</a>`;
+                pagination.appendChild(lastLi);
+            }
+
+            // 다음 버튼
+            const nextLi = document.createElement('li');
+            nextLi.className = currentPage === totalPages ? 'disabled' : '';
+            nextLi.innerHTML = `<a onclick="goToPage(${currentPage + 1})">다음</a>`;
+            pagination.appendChild(nextLi);
+
+            // 페이지 정보
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+            paginationInfo.textContent = `총 ${totalItems}개 중 ${startItem}-${endItem}개 표시`;
+        }
+
+        // 페이지 이동
+        function goToPage(page) {
+            const totalPages = Math.ceil(allPendingRequests.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            displayPagedRequests();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 엑셀 다운로드 함수
+        function downloadExcel() {
+            if (allPendingRequests.length === 0) {
+                showAlert('다운로드할 신청 내역이 없습니다.', 'danger');
+                return;
+            }
+
+            // 엑셀 데이터 준비
+            const excelData = [];
+            
+            // 헤더 행 (이미지 형식에 맞게)
+            excelData.push([
+                '배송메세지1',
+                '받는분성명',
+                '받는분전화번호',
+                '받는분주소(전체, 분할)',
+                '내품코드',
+                '내품명',
+                '내품수량',
+                '박스타입',
+                '운임구분',
+                '운송장번호',
+                '' // K열 (비어있음)
+            ]);
+
+            // 데이터 행 추가
+            allPendingRequests.forEach(item => {
+                const request = item.request;
+                
+                // 브로셔가 여러 개인 경우 각각 별도 행으로 추가
+                if (request.brochures && request.brochures.length > 0) {
+                    request.brochures.forEach((brochure, index) => {
+                        const row = [
+                            '브로셔', // 배송메세지1
+                            request.schoolname || '', // 받는분성명
+                            request.phone || '', // 받는분전화번호
+                            request.address || '', // 받는분주소(전체, 분할)
+                            'Brochure', // 내품코드
+                            brochure.brochureName || '', // 내품명
+                            brochure.quantity || '', // 내품수량
+                            '', // 박스타입 (없는 데이터)
+                            '', // 운임구분 (없는 데이터)
+                            request.invoices && request.invoices.length > 0 
+                                ? request.invoices.join(', ') 
+                                : '', // 운송장번호 (미입력 시 빈 항목)
+                            '' // K열 (비어있음)
+                        ];
+                        excelData.push(row);
+                    });
+                } else {
+                    // 브로셔 정보가 없는 경우
+                    excelData.push([
+                        '브로셔', // 배송메세지1
+                        request.schoolname || '', // 받는분성명
+                        request.phone || '', // 받는분전화번호
+                        request.address || '', // 받는분주소(전체, 분할)
+                        'Brochure', // 내품코드
+                        '', // 내품명
+                        '', // 내품수량
+                        '', // 박스타입
+                        '', // 운임구분
+                        request.invoices && request.invoices.length > 0 
+                            ? request.invoices.join(', ') 
+                            : '', // 운송장번호
+                        '' // K열
+                    ]);
+                }
+            });
+
+            // 워크북 생성
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+            // 컬럼 너비 설정
+            const colWidths = [
+                { wch: 15 }, // 배송메세지1
+                { wch: 15 }, // 받는분성명
+                { wch: 18 }, // 받는분전화번호
+                { wch: 40 }, // 받는분주소(전체, 분할)
+                { wch: 12 }, // 내품코드
+                { wch: 30 }, // 내품명
+                { wch: 12 }, // 내품수량
+                { wch: 12 }, // 박스타입
+                { wch: 12 }, // 운임구분
+                { wch: 20 }, // 운송장번호
+                { wch: 10 }  // K열
+            ];
+            ws['!cols'] = colWidths;
+
+            // 헤더 스타일 적용
+            const headerStyle = {
+                font: { 
+                    bold: true,
+                    sz: 11
+                },
+                fill: { 
+                    fgColor: { rgb: "#D3D3D3" } // grey
+                },
+                alignment: {
+                    horizontal: 'center',
+                    vertical: 'center'
+                }
+            };
+            
+            const headerRange = XLSX.utils.decode_range(ws['!ref']);
+            for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                if (!ws[cellAddress]) {
+                    ws[cellAddress] = { t: 's', v: '' };
+                }
+                // 헤더 스타일 적용
+                ws[cellAddress].s = headerStyle;
+            }
+
+            // 워크시트를 워크북에 추가
+            XLSX.utils.book_append_sheet(wb, ws, '신청 내역');
+
+            // 파일명 생성 (현재 날짜 포함)
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
+            const fileName = `브로셔_신청내역_${dateStr}.xlsx`;
+
+            // 엑셀 파일 다운로드
+            XLSX.writeFile(wb, fileName);
+            
+            showAlert('엑셀 파일이 다운로드되었습니다.', 'success');
+        }
+
+        // 페이지 로드 시 저장된 신청 내역 불러오기
+        window.addEventListener('DOMContentLoaded', function() {
+            loadSavedRequests();
+        });
+    </script>
+</body>
+</html>
