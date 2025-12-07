@@ -3,8 +3,15 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcrypt');
 
-const dbPath = path.join(__dirname, 'brochure.db');
+// Railway Volume 경로 또는 기본 경로 사용
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'brochure.db');
 const schemaPath = path.join(__dirname, 'schema.sql');
+
+// 데이터베이스 디렉토리가 없으면 생성 (Railway Volume 사용 시 필요)
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+}
 
 // 데이터베이스 초기화
 function initDatabase() {

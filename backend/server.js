@@ -668,10 +668,11 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 });
 
 // 데이터베이스 파일 존재 확인 및 자동 초기화
-const dbPath = path.join(__dirname, 'database', 'brochure.db');
+// Railway Volume 경로 또는 기본 경로 사용
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'database', 'brochure.db');
 const dbDir = path.dirname(dbPath);
 
-// 데이터베이스 디렉토리가 없으면 생성
+// 데이터베이스 디렉토리가 없으면 생성 (Railway Volume 사용 시 필요)
 if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
 }

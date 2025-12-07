@@ -1,13 +1,24 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
-const dbPath = path.join(__dirname, 'brochure.db');
+// Railway Volume 경로 또는 기본 경로 사용
+// 환경 변수 DB_PATH가 설정되어 있으면 사용, 없으면 기본 경로 사용
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'brochure.db');
+
+// 데이터베이스 디렉토리가 없으면 생성 (Railway Volume 사용 시 필요)
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+}
 
 // 데이터베이스 연결
 function getDatabase() {
     return new sqlite3.Database(dbPath, (err) => {
         if (err) {
             console.error('데이터베이스 연결 오류:', err.message);
+        } else {
+            console.log('데이터베이스 경로:', dbPath);
         }
     });
 }
