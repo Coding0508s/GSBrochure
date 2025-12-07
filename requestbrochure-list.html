@@ -872,14 +872,17 @@
                     optionsHtml += `<option value="${opt.value}">${opt.text}</option>`;
                 });
 
-            const newItem = document.createElement('div');
-            newItem.className = 'brochure-item-edit';
-            newItem.innerHTML = `
-                <select data-field="brochure" style="flex: 1; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">${optionsHtml}</select>
-                <input type="number" data-field="quantity" value="1" min="1" style="max-width: 100px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                <button type="button" class="btn btn-danger btn-small" onclick="removeBrochureItem(this)">삭제</button>
-            `;
-            container.insertBefore(newItem, container.lastElementChild);
+                const newItem = document.createElement('div');
+                newItem.className = 'brochure-item-edit';
+                newItem.innerHTML = `
+                    <select data-field="brochure" style="flex: 1; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">${optionsHtml}</select>
+                    <input type="number" data-field="quantity" value="1" min="1" style="max-width: 100px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                    <button type="button" class="btn btn-danger btn-small" onclick="removeBrochureItem(this)">삭제</button>
+                `;
+                container.insertBefore(newItem, container.lastElementChild);
+            } catch (error) {
+                console.error('브로셔 옵션 로드 오류:', error);
+            }
         }
 
         // 브로셔 항목 삭제
@@ -964,73 +967,6 @@
             } catch (error) {
                 console.error('수정 오류:', error);
                 alert('수정 중 오류가 발생했습니다: ' + error.message);
-            }
-        }
-        
-        // 기존 코드 (참고용 - 제거 예정)
-        function saveRequest_old(cardId) {
-            const card = document.getElementById(cardId);
-            if (!card) return;
-
-            const groupIndex = parseInt(card.dataset.groupIndex);
-            const requestIndex = parseInt(card.dataset.requestIndex);
-            
-            // 필드 값 수집
-            const schoolname = card.querySelector('[data-field="schoolname"] input')?.value || '';
-            const address = card.querySelector('[data-field="address"] input')?.value || '';
-            const phone = card.querySelector('[data-field="phone"] input')?.value || '';
-            const date = card.querySelector('[data-field="date"] input')?.value || '';
-            const contactSelect = card.querySelector('[data-field="contactName"] select');
-            const contact = contactSelect?.value || '';
-            const contactName = contactSelect?.options[contactSelect.selectedIndex]?.text || '';
-
-            // 브로셔 항목 수집
-            const brochures = [];
-            const brochureItems = card.querySelectorAll('.brochure-item-edit');
-            brochureItems.forEach(item => {
-                const brochureSelect = item.querySelector('[data-field="brochure"]');
-                const quantityInput = item.querySelector('[data-field="quantity"]');
-                if (brochureSelect && brochureSelect.value && quantityInput && quantityInput.value) {
-                    brochures.push({
-                        brochure: brochureSelect.value,
-                        brochureName: brochureSelect.options[brochureSelect.selectedIndex].text,
-                        quantity: parseInt(quantityInput.value)
-                    });
-                }
-            });
-
-            if (!schoolname || !address || !phone || !date || brochures.length === 0) {
-                alert('모든 필수 항목을 입력해주세요.');
-                return;
-            }
-
-            // 로컬 스토리지에서 원본 데이터 찾아서 업데이트
-            const stored = localStorage.getItem('brochure_requests');
-            if (!stored) {
-                alert('신청 내역을 찾을 수 없습니다.');
-                return;
-            }
-
-            const allData = JSON.parse(stored);
-            const originalRequest = allData[groupIndex]?.requests[requestIndex];
-            
-            if (originalRequest) {
-                // 원본 데이터 업데이트
-                originalRequest.schoolname = schoolname;
-                originalRequest.address = address;
-                originalRequest.phone = phone;
-                originalRequest.date = date;
-                originalRequest.contact = contact;
-                originalRequest.contactName = contactName;
-                originalRequest.brochures = brochures;
-
-                // 로컬 스토리지에 저장
-                localStorage.setItem('brochure_requests', JSON.stringify(allData));
-
-                alert('수정이 완료되었습니다.');
-                
-                // 페이지 새로고침
-                loadRequests();
             }
         }
 
@@ -1121,6 +1057,16 @@
             document.getElementById('totalRequests').textContent = totalRequests;
             document.getElementById('totalBrochures').textContent = totalBrochures;
             document.getElementById('withInvoice').textContent = withInvoice;
+        }
+
+        // 알림 표시 함수
+        function showAlert(message, type = 'success') {
+            // 간단한 alert로 대체 (또는 커스텀 알림 UI 구현 가능)
+            if (type === 'danger' || type === 'error') {
+                alert('오류: ' + message);
+            } else {
+                alert(message);
+            }
         }
 
         // 페이지 로드 시 데이터 불러오기
