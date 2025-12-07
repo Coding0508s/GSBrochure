@@ -4,7 +4,7 @@ const API_BASE_URL = (() => {
     // 프로덕션 환경 (GitHub Pages 등)
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
         // Railway 백엔드 서버 URL
-        return 'https://pleasant-upliftment-production.up.railway.app/api';
+        return 'https://gsbrochure.up.railway.app/api';
     }
     // 개발 환경
     return 'http://localhost:3000/api';
