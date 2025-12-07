@@ -102,7 +102,22 @@ const StockHistoryAPI = {
 // ==================== 관리자 API ====================
 const AdminAPI = {
     // 로그인
-    login: (username, password) => apiCall('/admin/login', 'POST', { username, password })
+    login: (username, password) => apiCall('/admin/login', 'POST', { username, password }),
+    
+    // 모든 관리자 계정 조회
+    getAllUsers: () => apiCall('/admin/users', 'GET'),
+    
+    // 관리자 계정 추가
+    createUser: (username, password) => apiCall('/admin/users', 'POST', { username, password }),
+    
+    // 비밀번호 변경
+    changePassword: (userId, currentPassword, newPassword) => apiCall(`/admin/users/${userId}/password`, 'PUT', {
+        password: currentPassword,
+        newPassword: newPassword
+    }),
+    
+    // 관리자 계정 삭제
+    deleteUser: (userId) => apiCall(`/admin/users/${userId}`, 'DELETE')
 };
 
 // 전역으로 내보내기

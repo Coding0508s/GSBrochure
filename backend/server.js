@@ -431,6 +431,114 @@ app.post('/api/admin/login', async (req, res) => {
     }
 });
 
+// 모든 관리자 계정 조회
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const users = await allQuery('SELECT id, username, created_at, updated_at FROM admin_users ORDER BY id');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 관리자 계정 추가
+app.post('/api/admin/users', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        
+        if (!username || !password) {
+            return res.status(400).json({ error: '사용자명과 비밀번호가 필요합니다.' });
+        }
+        
+        // 중복 확인
+        const existingUser = await getQuery('SELECT * FROM admin_users WHERE username = ?', [username]);
+        if (existingUser) {
+            return res.status(400).json({ error: '이미 존재하는 사용자명입니다.' });
+        }
+        
+        // 비밀번호 해싱
+        const passwordHash = await bcrypt.hash(password, 10);
+        
+        // 계정 생성
+        const result = await runQuery(
+            'INSERT INTO admin_users (username, password_hash) VALUES (?, ?)',
+            [username, passwordHash]
+        );
+        
+        res.json({ 
+            success: true, 
+            id: result.lastID, 
+            username: username,
+            message: '계정이 생성되었습니다.' 
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 관리자 비밀번호 변경
+app.put('/api/admin/users/:id/password', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { password, newPassword } = req.body;
+        
+        if (!password || !newPassword) {
+            return res.status(400).json({ error: '현재 비밀번호와 새 비밀번호가 필요합니다.' });
+        }
+        
+        // 사용자 확인
+        const user = await getQuery('SELECT * FROM admin_users WHERE id = ?', [id]);
+        if (!user) {
+            return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+        }
+        
+        // 현재 비밀번호 확인
+        const isValid = await bcrypt.compare(password, user.password_hash);
+        if (!isValid) {
+            return res.status(401).json({ error: '현재 비밀번호가 올바르지 않습니다.' });
+        }
+        
+        // 새 비밀번호 해싱
+        const newPasswordHash = await bcrypt.hash(newPassword, 10);
+        
+        // 비밀번호 업데이트
+        await runQuery(
+            'UPDATE admin_users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [newPasswordHash, id]
+        );
+        
+        res.json({ success: true, message: '비밀번호가 변경되었습니다.' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 관리자 계정 삭제
+app.delete('/api/admin/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // 사용자 확인
+        const user = await getQuery('SELECT * FROM admin_users WHERE id = ?', [id]);
+        if (!user) {
+            return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+        }
+        
+        // 마지막 계정인지 확인
+        const allUsers = await allQuery('SELECT * FROM admin_users');
+        if (allUsers.length <= 1) {
+            return res.status(400).json({ error: '최소 하나의 관리자 계정이 필요합니다.' });
+        }
+        
+        // 계정 삭제
+        await runQuery('DELETE FROM admin_users WHERE id = ?', [id]);
+        
+        res.json({ success: true, message: '계정이 삭제되었습니다.' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // 데이터베이스 파일 존재 확인 및 자동 초기화
 const dbPath = path.join(__dirname, 'database', 'brochure.db');
 const dbDir = path.dirname(dbPath);
