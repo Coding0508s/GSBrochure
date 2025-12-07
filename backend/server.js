@@ -25,8 +25,11 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// 정적 파일 제공 (프론트엔드 파일) - 상위 디렉토리의 파일들
-app.use(express.static(path.join(__dirname, '..')));
+// 정적 파일 제공 (프론트엔드 파일) - 로컬 개발 환경에서만 활성화
+// Railway 배포 환경에서는 프론트엔드가 GitHub Pages에서 제공되므로 비활성화
+if (process.env.NODE_ENV !== 'production' || fs.existsSync(path.join(__dirname, '..', 'requestbrochure.html'))) {
+    app.use(express.static(path.join(__dirname, '..')));
+}
 
 // 루트 경로 라우팅
 app.get('/', (req, res) => {
