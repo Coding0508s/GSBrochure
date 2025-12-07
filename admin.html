@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>관리자 페이지</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.5.0/dist/xlsx.full.min.js"></script>
     <script>
-        // xlsx-js-style이 로드되지 않은 경우 대체
+        // xlsx-js-style이 로드되지 않은 경우 동적 스크립트 로딩
         if (typeof XLSX === 'undefined') {
-            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>');
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+            script.async = true;
+            document.head.appendChild(script);
         }
     </script>
     <script src="js/api.js"></script>
