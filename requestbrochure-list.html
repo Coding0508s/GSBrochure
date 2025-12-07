@@ -219,6 +219,53 @@
             color: #333;
         }
 
+        .card-actions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .info-value input,
+        .info-value select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .brochure-item-edit {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .brochure-item-edit input,
+        .brochure-item-edit select {
+            flex: 1;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .brochure-item-edit input[type="number"] {
+            max-width: 100px;
+        }
+
         .stats {
             display: flex;
             gap: 20px;
@@ -321,7 +368,20 @@
             margin: 0 15px;
         }
 
+        /* 반응형 디자인 */
         @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
             .request-info {
                 grid-template-columns: 1fr;
             }
@@ -333,6 +393,49 @@
 
             .search-row {
                 flex-direction: column;
+            }
+
+            .search-group {
+                min-width: 100%;
+            }
+
+            .request-card {
+                padding: 15px;
+            }
+
+            .card-actions {
+                flex-direction: column;
+            }
+
+            .card-actions .btn {
+                width: 100%;
+            }
+
+            .pagination-container {
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .request-card {
+                padding: 10px;
+            }
+
+            input, select {
+                font-size: 16px; /* iOS 줌 방지 */
             }
         }
     </style>
@@ -372,10 +475,10 @@
                 <div class="stat-number" id="totalRequests">0</div>
                 <div class="stat-label">총 신청 건수</div>
             </div>
-            <div class="stat-item">
+            <!-- <div class="stat-item">
                 <div class="stat-number" id="totalBrochures">0</div>
                 <div class="stat-label">총 브로셔 수량</div>
-            </div>
+            </div> -->
             <div class="stat-item">
                 <div class="stat-number" id="withInvoice">0</div>
                 <div class="stat-label">운송장 등록 완료</div>
@@ -399,6 +502,24 @@
         let filteredRequests = [];
         let currentPage = 1;
         const itemsPerPage = 10;
+
+        // 브로셔 옵션 목록 로드 (로컬 스토리지에서)
+        function loadBrochureOptions() {
+            const brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
+            return brochures.map(b => ({
+                value: b.id,
+                text: b.name
+            }));
+        }
+
+        // 담당자 옵션 목록 로드 (로컬 스토리지에서)
+        function loadContactOptions() {
+            const contacts = JSON.parse(localStorage.getItem('contacts_master') || '[]');
+            return contacts.map(c => ({
+                value: c.id,
+                text: c.name
+            }));
+        }
 
         // 저장된 신청 내역 로드
         function loadRequests() {
@@ -576,6 +697,20 @@
                 ? '<span class="status-badge completed">배송완료</span>'
                 : '<span class="status-badge pending">배송 대기중</span>';
 
+            const cardId = `card-${groupIndex}-${requestIndex}`;
+            const isEditable = !hasInvoices;
+            
+            card.id = cardId;
+            card.dataset.groupIndex = groupIndex;
+            card.dataset.requestIndex = requestIndex;
+            
+            // 수정 버튼 (배송 완료가 아닌 경우만)
+            const editButton = isEditable 
+                ? `<div class="card-actions">
+                    <button class="btn btn-primary" onclick="editRequest('${cardId}')">수정</button>
+                   </div>`
+                : '';
+
             card.innerHTML = `
                 <div class="request-header">
                     <div>
@@ -587,32 +722,219 @@
                 <div class="request-info">
                     <div class="info-item">
                         <div class="info-label">기관명</div>
-                        <div class="info-value">${request.schoolname}</div>
+                        <div class="info-value" data-field="schoolname">${request.schoolname}</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">주소</div>
-                        <div class="info-value">${request.address}</div>
+                        <div class="info-value" data-field="address">${request.address}</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">전화번호</div>
-                        <div class="info-value">${request.phone}</div>
+                        <div class="info-value" data-field="phone">${request.phone}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">담당자</div>
+                        <div class="info-value" data-field="contactName">${request.contactName || request.contact || '-'}</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">신청일</div>
-                        <div class="info-value">${formatDate(request.date)}</div>
+                        <div class="info-value" data-field="date">${formatDate(request.date)}</div>
                     </div>
                 </div>
-                <div class="brochure-list">
+                <div class="brochure-list" data-brochures="${encodeURIComponent(JSON.stringify(request.brochures || []))}">
                     <div class="info-label" style="margin-bottom: 10px;">신청 브로셔</div>
-                    ${brochureListHtml}
+                    <div class="brochure-items-container">${brochureListHtml}</div>
                 </div>
                 <div class="invoice-list">
                     <div class="info-label" style="margin-bottom: 10px;">운송장 번호</div>
                     ${invoiceListHtml}
                 </div>
+                ${editButton}
             `;
 
             return card;
+        }
+
+        // 수정 모드로 전환
+        function editRequest(cardId) {
+            const card = document.getElementById(cardId);
+            if (!card) return;
+
+            const groupIndex = parseInt(card.dataset.groupIndex);
+            const requestIndex = parseInt(card.dataset.requestIndex);
+            const request = filteredRequests[groupIndex]?.requests[requestIndex];
+            if (!request) return;
+
+            // 필드들을 편집 가능하게 변경
+            const infoValues = card.querySelectorAll('.info-value');
+            infoValues.forEach(item => {
+                const field = item.dataset.field;
+                const currentValue = item.textContent.trim();
+                
+                if (field === 'date') {
+                    // 날짜는 input[type="date"]로
+                    const dateValue = request.date || '';
+                    item.innerHTML = `<input type="date" value="${dateValue}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">`;
+                } else if (field === 'contactName') {
+                    // 담당자는 select로 (로컬 스토리지에서 로드)
+                    const contactOptions = loadContactOptions();
+                    let optionsHtml = '<option value="">선택하세요</option>';
+                    contactOptions.forEach(opt => {
+                        const selected = opt.value === request.contact ? 'selected' : '';
+                        optionsHtml += `<option value="${opt.value}" ${selected}>${opt.text}</option>`;
+                    });
+                    item.innerHTML = `<select style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">${optionsHtml}</select>`;
+                } else {
+                    // 나머지는 text input으로
+                    item.innerHTML = `<input type="text" value="${currentValue}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">`;
+                }
+            });
+
+            // 브로셔 목록을 편집 가능하게 변경
+            const brochureContainer = card.querySelector('.brochure-items-container');
+            if (brochureContainer && request.brochures) {
+                const brochureOptions = loadBrochureOptions();
+                let brochureEditHtml = '';
+                request.brochures.forEach((brochure, index) => {
+                    let optionsHtml = '<option value="">선택하세요</option>';
+                    brochureOptions.forEach(opt => {
+                        const selected = opt.value === brochure.brochure ? 'selected' : '';
+                        optionsHtml += `<option value="${opt.value}" ${selected}>${opt.text}</option>`;
+                    });
+                    brochureEditHtml += `
+                        <div class="brochure-item-edit" data-index="${index}">
+                            <select data-field="brochure" style="flex: 1; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">${optionsHtml}</select>
+                            <input type="number" data-field="quantity" value="${brochure.quantity}" min="1" style="max-width: 100px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                            <button type="button" class="btn btn-danger btn-small" onclick="removeBrochureItem(this)">삭제</button>
+                        </div>
+                    `;
+                });
+                brochureEditHtml += `<button type="button" class="btn btn-success btn-small" onclick="addBrochureItemEdit('${cardId}')" style="margin-top: 10px;">+ 브로셔 추가</button>`;
+                brochureContainer.innerHTML = brochureEditHtml;
+            }
+
+            // 수정/취소 버튼으로 변경
+            const actionsDiv = card.querySelector('.card-actions');
+            if (actionsDiv) {
+                actionsDiv.innerHTML = `
+                    <button class="btn btn-primary" onclick="saveRequest('${cardId}')">저장</button>
+                    <button class="btn btn-secondary" onclick="cancelEdit('${cardId}')">취소</button>
+                `;
+            }
+        }
+
+        // 브로셔 항목 추가 (수정 모드)
+        function addBrochureItemEdit(cardId) {
+            const card = document.getElementById(cardId);
+            const container = card.querySelector('.brochure-items-container');
+            if (!container) return;
+
+            const brochureOptions = loadBrochureOptions();
+            let optionsHtml = '<option value="">선택하세요</option>';
+            brochureOptions.forEach(opt => {
+                optionsHtml += `<option value="${opt.value}">${opt.text}</option>`;
+            });
+
+            const newItem = document.createElement('div');
+            newItem.className = 'brochure-item-edit';
+            newItem.innerHTML = `
+                <select data-field="brochure" style="flex: 1; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">${optionsHtml}</select>
+                <input type="number" data-field="quantity" value="1" min="1" style="max-width: 100px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                <button type="button" class="btn btn-danger btn-small" onclick="removeBrochureItem(this)">삭제</button>
+            `;
+            container.insertBefore(newItem, container.lastElementChild);
+        }
+
+        // 브로셔 항목 삭제
+        function removeBrochureItem(button) {
+            button.closest('.brochure-item-edit').remove();
+        }
+
+        // 수정 저장
+        function saveRequest(cardId) {
+            const card = document.getElementById(cardId);
+            if (!card) return;
+
+            const groupIndex = parseInt(card.dataset.groupIndex);
+            const requestIndex = parseInt(card.dataset.requestIndex);
+            
+            // 필드 값 수집
+            const schoolname = card.querySelector('[data-field="schoolname"] input')?.value || '';
+            const address = card.querySelector('[data-field="address"] input')?.value || '';
+            const phone = card.querySelector('[data-field="phone"] input')?.value || '';
+            const date = card.querySelector('[data-field="date"] input')?.value || '';
+                    const contactSelect = card.querySelector('[data-field="contactName"] select');
+                    const contact = contactSelect?.value || '';
+                    const contactName = contactSelect?.options[contactSelect.selectedIndex]?.text || '';
+                    
+                    // 담당자 옵션 로드
+                    const contactOptions = loadContactOptions();
+                    if (contactSelect) {
+                        contactSelect.innerHTML = '<option value="">선택하세요</option>';
+                        contactOptions.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt.value;
+                            option.textContent = opt.text;
+                            if (opt.value === contact) {
+                                option.selected = true;
+                            }
+                            contactSelect.appendChild(option);
+                        });
+                    }
+
+            // 브로셔 항목 수집
+            const brochures = [];
+            const brochureItems = card.querySelectorAll('.brochure-item-edit');
+            brochureItems.forEach(item => {
+                const brochureSelect = item.querySelector('[data-field="brochure"]');
+                const quantityInput = item.querySelector('[data-field="quantity"]');
+                if (brochureSelect && brochureSelect.value && quantityInput && quantityInput.value) {
+                    brochures.push({
+                        brochure: brochureSelect.value,
+                        brochureName: brochureSelect.options[brochureSelect.selectedIndex].text,
+                        quantity: parseInt(quantityInput.value)
+                    });
+                }
+            });
+
+            if (!schoolname || !address || !phone || !date || brochures.length === 0) {
+                alert('모든 필수 항목을 입력해주세요.');
+                return;
+            }
+
+            // 로컬 스토리지에서 원본 데이터 찾아서 업데이트
+            const stored = localStorage.getItem('brochure_requests');
+            if (!stored) {
+                alert('신청 내역을 찾을 수 없습니다.');
+                return;
+            }
+
+            const allData = JSON.parse(stored);
+            const originalRequest = allData[groupIndex]?.requests[requestIndex];
+            
+            if (originalRequest) {
+                // 원본 데이터 업데이트
+                originalRequest.schoolname = schoolname;
+                originalRequest.address = address;
+                originalRequest.phone = phone;
+                originalRequest.date = date;
+                originalRequest.contact = contact;
+                originalRequest.contactName = contactName;
+                originalRequest.brochures = brochures;
+
+                // 로컬 스토리지에 저장
+                localStorage.setItem('brochure_requests', JSON.stringify(allData));
+
+                alert('수정이 완료되었습니다.');
+                
+                // 페이지 새로고침
+                loadRequests();
+            }
+        }
+
+        // 수정 취소
+        function cancelEdit(cardId) {
+            loadRequests();
         }
 
         // 날짜 포맷팅

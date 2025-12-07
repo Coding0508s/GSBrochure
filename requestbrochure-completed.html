@@ -91,6 +91,23 @@
             background-color: #0ca22c;
         }
 
+        .btn-warning {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+
+        .card-actions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+        }
+
         .request-card {
             border: 2px solid #440b86;
             border-radius: 5px;
@@ -302,7 +319,20 @@
             margin: 0 15px;
         }
 
+        /* 반응형 디자인 */
         @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
             .request-info {
                 grid-template-columns: 1fr;
             }
@@ -314,6 +344,54 @@
 
             .search-row {
                 flex-direction: column;
+            }
+
+            .search-group {
+                min-width: 100%;
+            }
+
+            .request-card {
+                padding: 15px;
+            }
+
+            .card-actions {
+                flex-direction: column;
+            }
+
+            .card-actions .btn {
+                width: 100%;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .pagination-container {
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .request-card {
+                padding: 10px;
+            }
+
+            input, select {
+                font-size: 16px; /* iOS 줌 방지 */
             }
         }
     </style>
@@ -385,11 +463,15 @@
             const stored = localStorage.getItem('brochure_requests');
             const allData = stored ? JSON.parse(stored) : [];
             
-            // 운송장이 입력된 신청만 필터링
+            // 운송장이 입력된 신청만 필터링 (빈 배열이나 빈 문자열만 있는 경우 제외)
             allRequests = allData.map(requestGroup => {
-                const completed = requestGroup.requests.filter(request => 
-                    request.invoices && request.invoices.length > 0
-                );
+                const completed = requestGroup.requests.filter(request => {
+                    if (!request.invoices || request.invoices.length === 0) {
+                        return false;
+                    }
+                    // 실제로 값이 있는 운송장 번호가 있는지 확인
+                    return request.invoices.some(inv => inv && inv.trim() !== '');
+                });
                 return {
                     ...requestGroup,
                     requests: completed
@@ -578,6 +660,10 @@
                         <div class="info-value">${request.phone}</div>
                     </div>
                     <div class="info-item">
+                        <div class="info-label">담당자</div>
+                        <div class="info-value">${request.contactName || request.contact || '-'}</div>
+                    </div>
+                    <div class="info-item">
                         <div class="info-label">신청일</div>
                         <div class="info-value">${formatDate(request.date)}</div>
                     </div>
@@ -589,6 +675,9 @@
                 <div class="invoice-list">
                     <div class="info-label" style="margin-bottom: 10px;">운송장 번호</div>
                     ${invoiceListHtml}
+                </div>
+                <div class="card-actions">
+                    <button class="btn btn-warning" onclick="cancelInvoice(${groupIndex}, ${requestIndex})">운송장 입력 취소</button>
                 </div>
             `;
 
@@ -644,6 +733,62 @@
             currentPage = 1;
             displayRequests();
             updateStats();
+        }
+
+        // 운송장 입력 취소 함수
+        function cancelInvoice(groupIndex, requestIndex) {
+            if (!confirm('운송장 입력을 취소하시겠습니까? 취소된 건은 다시 신청 내역 및 운송장 번호 입력 페이지에 표시됩니다.')) {
+                return;
+            }
+
+            // 필터링된 배열에서 해당 요청 찾기
+            const targetRequest = filteredRequests[groupIndex]?.requests[requestIndex];
+            if (!targetRequest) {
+                alert('신청 내역을 찾을 수 없습니다.');
+                return;
+            }
+
+            // 로컬 스토리지에서 모든 신청 내역 가져오기
+            const stored = localStorage.getItem('brochure_requests');
+            if (!stored) {
+                alert('신청 내역을 찾을 수 없습니다.');
+                return;
+            }
+
+            const allData = JSON.parse(stored);
+            
+            // 원본 데이터에서 해당 요청 찾기 (날짜, 기관명, 주소, 전화번호로 매칭)
+            let found = false;
+            for (let i = 0; i < allData.length; i++) {
+                const requestGroup = allData[i];
+                if (requestGroup.requests) {
+                    for (let j = 0; j < requestGroup.requests.length; j++) {
+                        const request = requestGroup.requests[j];
+                        if (request.date === targetRequest.date &&
+                            request.schoolname === targetRequest.schoolname &&
+                            request.address === targetRequest.address &&
+                            request.phone === targetRequest.phone) {
+                            // 운송장 번호 제거
+                            request.invoices = [];
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+            }
+            
+            if (found) {
+                // 로컬 스토리지에 저장
+                localStorage.setItem('brochure_requests', JSON.stringify(allData));
+                
+                alert('운송장 입력이 취소되었습니다. 해당 건은 다시 신청 내역 및 운송장 번호 입력 페이지에 표시됩니다.');
+                
+                // 페이지 새로고침하여 목록 업데이트
+                loadRequests();
+            } else {
+                alert('신청 내역을 찾을 수 없습니다.');
+            }
         }
 
         // 통계 업데이트

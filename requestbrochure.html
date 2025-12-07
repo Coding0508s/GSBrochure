@@ -249,7 +249,7 @@
         }
 
         .brochure-item-fields .form-group {
-            margin-bottom: 0;
+            margin-bottom: 15px;
         }
 
         .brochure-item-fields .form-group.expand {
@@ -306,13 +306,105 @@
             color: #0ca22c;
         }
 
+        /* 반응형 디자인 */
         @media screen and (max-width: 768px) {
-            .row-fields {
-                grid-template-columns: 1fr;
+            body {
+                padding: 10px;
             }
 
             .container {
                 padding: 15px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .subtitle {
+                font-size: 14px;
+            }
+
+            .row-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .row-fields {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .form-group.narrow {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .form-group.expand {
+                width: 100%;
+            }
+
+            .brochure-item-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .brochure-item-header .form-group.narrow {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .brochure-item-fields {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .brochure-item-fields .form-group.narrow {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .invoice-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .invoice-group input {
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+
+            .btn-add-row {
+                width: 100%;
+            }
+
+            .row-container {
+                padding: 10px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .form-section {
+                padding: 15px;
+            }
+
+            .row-container {
+                padding: 8px;
+            }
+
+            input, select {
+                font-size: 16px; /* iOS 줌 방지 */
             }
         }
     </style>
@@ -321,6 +413,7 @@
     <div class="container">
         <a href="requestbrochure-list.html" class="nav-link">📋 신청 내역 조회</a>
         <a href="requestbrochure logistics.html" class="nav-link">📋 운송장 번호 입력</a>
+        <a href="admin-login.html" class="nav-link">⚙️ 관리자 페이지</a>
         <h1>GrapeSEED Brochure Request</h1>
         <p class="subtitle">필요한 브로셔를 신청하세요. 신청하신 브로셔는 최대 3일 이내에 발송됩니다.</p>
         
@@ -330,31 +423,121 @@
             <!-- 브로셔 신청 행들 -->
             <div class="form-section">
                 <h3>브로셔 신청</h3>
+                <div class="option-container">
+                    <div class="option-item" style="margin-bottom: 10px;">
+                        <label for="option-1">담당자 이름</label>
+                        <select id="option-1" name="option-1">
+                            <!-- 담당자 옵션이 동적으로 로드됩니다 -->
+                        </select>
+                    </div>
+                </div>
                 <div id="rowsContainer">
                     <!-- 행들이 여기에 동적으로 추가됩니다 -->
                 </div>
-                <button type="button" class="btn btn-success btn-add-row" onclick="addRow()">+ 행 추가</button>
+                <button type="button" class="btn btn-success btn-add-row" onclick="addRow()">+ 다른 기관 추가</button>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-submit">저장하기</button>
+            <!-- 각 건마다 개별 저장 버튼이 있으므로 전체 저장 버튼은 제거 -->
         </form>
     </div>
 
     <script>
         let rowCount = 0;
 
-        // 브로셔 옵션 목록
-        const brochureOptions = [
-            { value: '1', text: 'LittleSEED Play in English' },
-            { value: '2', text: 'Think in English, Speak in English' },
-            { value: '3', text: '어린이 영어교육, 왜 확실한 구어습득이 필요한가?' },
-            { value: '4', text: 'GrapeSEED Elementary' },
-            { value: '5', text: 'Information for Parents' },
-            { value: '6', text: 'LittleSEED at Home Guide' },
-            { value: '7', text: '성공적인 GrapeSEED를 위한 가이드' },
-            { value: '8', text: 'GS Baby' },
-            { value: '9', text: 'GS Online 리플렛' }
-        ];
+        // 브로셔 옵션 목록 로드 (로컬 스토리지에서)
+        function loadBrochureOptions() {
+            const brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
+            return brochures.map(b => ({
+                value: b.id,
+                text: b.name
+            }));
+        }
+
+        // 담당자 옵션 목록 로드 (로컬 스토리지에서)
+        function loadContactOptions() {
+            const contacts = JSON.parse(localStorage.getItem('contacts_master') || '[]');
+            return contacts.map(c => ({
+                value: c.id,
+                text: c.name
+            }));
+        }
+
+        // 브로셔 재고 차감 함수
+        function deductBrochureStock(brochures, contactName, schoolname, date) {
+            let brochureMaster = JSON.parse(localStorage.getItem('brochure_master') || '[]');
+            const insufficientStock = [];
+            const stockChanges = []; // 재고 변경 내역 저장
+
+            // 재고 확인
+            for (const brochure of brochures) {
+                const masterItem = brochureMaster.find(b => b.id === brochure.brochure);
+                if (masterItem) {
+                    const currentStock = masterItem.stock || 0;
+                    const requestedQuantity = brochure.quantity || 0;
+                    
+                    if (currentStock < requestedQuantity) {
+                        insufficientStock.push({
+                            name: brochure.brochureName,
+                            requested: requestedQuantity,
+                            available: currentStock
+                        });
+                    } else {
+                        // 재고 변경 내역 저장
+                        stockChanges.push({
+                            brochureId: brochure.brochure,
+                            brochureName: brochure.brochureName,
+                            quantity: requestedQuantity,
+                            beforeStock: currentStock,
+                            afterStock: currentStock - requestedQuantity
+                        });
+                    }
+                }
+            }
+
+            // 재고 부족이 있으면 false 반환
+            if (insufficientStock.length > 0) {
+                return {
+                    success: false,
+                    insufficient: insufficientStock
+                };
+            }
+
+            // 재고 차감 및 출고 내역 저장
+            for (const change of stockChanges) {
+                const masterItem = brochureMaster.find(b => b.id === change.brochureId);
+                if (masterItem) {
+                    masterItem.stock = change.afterStock;
+                    
+                    // 출고 내역 저장
+                    recordStockTransaction({
+                        type: '출고',
+                        date: date || new Date().toISOString().split('T')[0],
+                        brochureId: change.brochureId,
+                        brochureName: change.brochureName,
+                        quantity: change.quantity,
+                        contactName: contactName || '',
+                        schoolname: schoolname || '',
+                        beforeStock: change.beforeStock,
+                        afterStock: change.afterStock
+                    });
+                }
+            }
+
+            localStorage.setItem('brochure_master', JSON.stringify(brochureMaster));
+            return { success: true };
+        }
+
+        // 입출고 내역 저장 함수
+        function recordStockTransaction(transaction) {
+            let history = JSON.parse(localStorage.getItem('stock_history') || '[]');
+            history.push({
+                ...transaction,
+                timestamp: new Date().toISOString()
+            });
+            // 최신순으로 정렬
+            history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            localStorage.setItem('stock_history', JSON.stringify(history));
+        }
 
         // 행 추가 함수
         function addRow() {
@@ -365,7 +548,8 @@
             rowDiv.className = 'row-container';
             rowDiv.id = `row-${rowCount}`;
             
-            // 브로셔 선택 옵션 생성
+            // 브로셔 선택 옵션 생성 (로컬 스토리지에서 로드)
+            const brochureOptions = loadBrochureOptions();
             let brochureOptionsHtml = '<option value="">선택하세요</option>';
             brochureOptions.forEach(option => {
                 brochureOptionsHtml += `<option value="${option.value}">${option.text}</option>`;
@@ -381,7 +565,6 @@
                         <label for="schoolname-${rowCount}">기관명</label>
                         <input type="text" id="schoolname-${rowCount}" name="schoolname-${rowCount}" class="schoolname-input" placeholder="기관명을 입력하세요" required>
                     </div>
-                    <button type="button" class="btn btn-danger" onclick="removeRow(${rowCount})">삭제</button>
                 </div>
                 <div class="row-fields">
                     <div class="form-group expand">
@@ -393,6 +576,7 @@
                         <input type="tel" id="phone-${rowCount}" name="phone-${rowCount}" placeholder="010-0000-0000" oninput="formatPhoneNumber(this)" maxlength="13" required>
                     </div>
                 </div>
+
                 <div class="row-fields full-width">
                     <div class="form-group">
                         <div class="brochure-container" id="brochure-container-${rowCount}">
@@ -401,6 +585,7 @@
                         <button type="button" class="btn btn-success btn-small brochure-add-btn" onclick="addBrochureItem(${rowCount})">+ 브로셔 추가</button>
                     </div>
                 </div>
+                
                 <div class="row-fields full-width">
                     <div class="form-group">
                         <label>송장번호(화성 물류창고 입력)</label>
@@ -410,6 +595,10 @@
                         <!-- 송장번호는 logistics 페이지에서만 추가 가능 -->
                     </div>
                 </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
+                    <button type="button" class="btn btn-danger" onclick="removeRow(${rowCount})" style="padding: 10px 20px; font-size: 14px;">삭제</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSingleRequest(${rowCount})" style="padding: 10px 20px; font-size: 14px;">저장</button>
+                </div>
             `;
             
             rowsContainer.appendChild(rowDiv);
@@ -418,28 +607,6 @@
             // 송장번호 필드는 비활성화 (logistics 페이지에서만 추가 가능)
             addInvoiceField(rowCount, []);
             updateRowNumbers();
-            
-            // 입력 필드 변경 시 송장번호 로드 시도
-            setTimeout(() => {
-                const dateInput = document.getElementById(`date-${rowCount}`);
-                const schoolnameInput = document.getElementById(`schoolname-${rowCount}`);
-                const addressInput = document.getElementById(`address-${rowCount}`);
-                const phoneInput = document.getElementById(`phone-${rowCount}`);
-                
-                const checkAndLoad = () => {
-                    if (dateInput.value && schoolnameInput.value && addressInput.value && 
-                        phoneInput.value) {
-                        loadInvoiceNumbers(rowCount);
-                    }
-                };
-                
-                [dateInput, schoolnameInput, addressInput, phoneInput].forEach(input => {
-                    if (input) {
-                        input.addEventListener('change', checkAndLoad);
-                        input.addEventListener('blur', checkAndLoad);
-                    }
-                });
-            }, 100);
         }
 
         // 행 삭제 함수
@@ -464,7 +631,8 @@
             const brochureCount = container.querySelectorAll('.brochure-item').length;
             const itemId = `brochure-${rowId}-${brochureCount + 1}`;
             
-            // 브로셔 선택 옵션 생성
+            // 브로셔 선택 옵션 생성 (로컬 스토리지에서 로드)
+            const brochureOptions = loadBrochureOptions();
             let brochureOptionsHtml = '<option value="">선택하세요</option>';
             brochureOptions.forEach(option => {
                 brochureOptionsHtml += `<option value="${option.value}">${option.text}</option>`;
@@ -475,24 +643,18 @@
             brochureItem.id = `brochure-item-${itemId}`;
             
             brochureItem.innerHTML = `
-                <div class="brochure-item-header">
-                    <div class="form-group expand">
-                        <label for="${itemId}">브로셔</label>
-                    </div>
-                    <div class="form-group narrow">
-                        <label for="quantity-${itemId}">수량</label>
-                    </div>
-                    ${!isDefault ? `<button type="button" class="btn btn-danger btn-small" onclick="removeBrochureItem('${itemId}')" style="margin-bottom: 0;">삭제</button>` : '<div style="width: 60px;"></div>'}
-                </div>
                 <div class="brochure-item-fields">
                     <div class="form-group expand">
+                        <label for="${itemId}">브로셔</label>
                         <select id="${itemId}" name="${itemId}" required>
                             ${brochureOptionsHtml}
                         </select>
                     </div>
                     <div class="form-group narrow">
-                        <input type="number" id="quantity-${itemId}" name="quantity-${itemId}" min="1" required>
+                        <label for="quantity-${itemId}">수량</label>
+                        <input type="number" id="quantity-${itemId}" name="quantity-${itemId}" min="1" placeholder="수량을 입력하세요" required>
                     </div>
+                    ${!isDefault ? `<button type="button" class="btn btn-danger btn-small" onclick="removeBrochureItem('${itemId}')" style="align-self: flex-end; margin-bottom: 0;">삭제</button>` : ''}
                 </div>
             `;
             
@@ -642,68 +804,99 @@
             }, 3000);
         }
 
-        // 폼 제출 처리
-        document.getElementById('brochureForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+        // 개별 건 저장 함수
+        function saveSingleRequest(rowId) {
+            // 상단의 담당자 선택 값 가져오기
+            const contactSelect = document.getElementById('option-1');
+            const contact = contactSelect.value;
+            const contactName = contactSelect.options[contactSelect.selectedIndex]?.text || '';
             
-            // 행이 하나도 없으면 경고
-            const rows = document.querySelectorAll('.row-container');
-            if (rows.length === 0) {
-                showAlert('최소 하나의 브로셔를 신청해주세요.', 'danger');
+            if (!contact) {
+                showAlert('담당자를 선택해주세요.', 'danger');
                 return;
             }
 
-            // 모든 행의 데이터 수집
-            const requests = [];
-            rows.forEach((row) => {
-                // 각 행의 ID 추출 (row-1, row-2 등에서 숫자 부분만)
-                const rowId = row.id.replace('row-', '');
-                const date = document.getElementById(`date-${rowId}`).value;
-                const schoolname = document.getElementById(`schoolname-${rowId}`).value;
-                const address = document.getElementById(`address-${rowId}`).value;
-                const phone = document.getElementById(`phone-${rowId}`).value;
+            // 해당 행의 데이터 수집
+            const date = document.getElementById(`date-${rowId}`)?.value;
+            const schoolname = document.getElementById(`schoolname-${rowId}`)?.value;
+            const address = document.getElementById(`address-${rowId}`)?.value;
+            const phone = document.getElementById(`phone-${rowId}`)?.value;
                 const brochures = collectBrochureItems(rowId);
                 const invoices = collectInvoiceFields(rowId);
                 
                 // 필수 필드 검증
-                if (date && schoolname && address && phone && brochures.length > 0) {
-                    requests.push({
-                        date: date,
-                        schoolname: schoolname,
-                        address: address,
-                        phone: phone,
-                        brochures: brochures, // 배열로 변경
-                        invoices: invoices
-                    });
-                }
-            });
+            if (!date || !schoolname || !address || !phone || brochures.length === 0) {
+                showAlert('모든 필수 항목을 입력해주세요.', 'danger');
+                return;
+            }
 
-            if (requests.length === 0) {
-                showAlert('유효한 브로셔 신청이 없습니다. 모든 필수 항목을 입력해주세요.', 'danger');
+            // 재고 확인 및 차감
+            const stockResult = deductBrochureStock(brochures, contactName, schoolname, date);
+            if (!stockResult.success) {
+                let message = '재고가 부족합니다:\n';
+                stockResult.insufficient.forEach(item => {
+                    message += `- ${item.name}: 요청 ${item.requested}권, 보유 ${item.available}권\n`;
+                });
+                alert(message);
                 return;
             }
 
             // 데이터 저장 (로컬 스토리지 사용)
             const requestData = {
-                requests: requests,
-                submittedAt: new Date().toISOString()
+                date: date,
+                schoolname: schoolname,
+                address: address,
+                phone: phone,
+                contact: contact,
+                contactName: contactName,
+                brochures: brochures,
+                invoices: invoices
             };
 
             // 기존 신청 내역 가져오기
             let allRequests = JSON.parse(localStorage.getItem('brochure_requests') || '[]');
-            allRequests.push(requestData);
+            
+            // 새로운 그룹 생성 또는 기존 그룹에 추가
+            const newGroup = {
+                requests: [requestData],
+                submittedAt: new Date().toISOString()
+            };
+            allRequests.push(newGroup);
             localStorage.setItem('brochure_requests', JSON.stringify(allRequests));
 
             showAlert('브로셔 신청이 완료되었습니다!', 'success');
             
-            // 폼 초기화
-            document.getElementById('rowsContainer').innerHTML = '';
-            rowCount = 0;
-            addRow(); // 기본 행 하나 다시 추가
+            // 해당 행 제거
+            const row = document.getElementById(`row-${rowId}`);
+            if (row) {
+                row.remove();
+            }
+        }
+
+        // 폼 제출 처리 - 더 이상 사용하지 않지만 호환성을 위해 유지
+        document.getElementById('brochureForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            showAlert('각 건마다 개별 저장 버튼을 사용해주세요.', 'danger');
         });
 
-        // 페이지 로드 시 기본 행 하나 추가
+        // 담당자 옵션 로드 및 표시
+        function loadContactOptionsToSelect() {
+            const contactSelect = document.getElementById('option-1');
+            if (!contactSelect) return;
+
+            const contacts = loadContactOptions();
+            contactSelect.innerHTML = '<option value="">선택하세요</option>';
+            contacts.forEach(contact => {
+                const option = document.createElement('option');
+                option.value = contact.value;
+                option.textContent = contact.text;
+                contactSelect.appendChild(option);
+            });
+        }
+
+        // 페이지 로드 시 기본 행 하나 추가 및 옵션 로드
         window.addEventListener('DOMContentLoaded', function() {
+            loadContactOptionsToSelect();
             addRow();
         });
     </script>

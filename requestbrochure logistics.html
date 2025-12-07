@@ -241,6 +241,80 @@
             border-color: #f5c6cb;
         }
 
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .row-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .row-fields {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .form-group.narrow {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .form-group.expand {
+                width: 100%;
+            }
+
+            .invoice-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .invoice-group input {
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+
+            .row-container {
+                padding: 10px;
+            }
+
+            .pagination-container {
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .row-container {
+                padding: 8px;
+            }
+
+            input, select {
+                font-size: 16px; /* iOS 줌 방지 */
+            }
+        }
+
         .pagination-container {
             display: flex;
             justify-content: center;
@@ -333,7 +407,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-submit">운송장 번호 저장</button>
+            <!-- 각 건마다 개별 저장 버튼이 있으므로 전체 저장 버튼은 제거 -->
         </form>
     </div>
 
@@ -343,18 +417,14 @@
         const itemsPerPage = 10;
         let allPendingRequests = [];
 
-        // 브로셔 옵션 목록
-        const brochureOptions = [
-            { value: '1', text: 'LittleSEED Play in English' },
-            { value: '2', text: 'Think in English, Speak in English' },
-            { value: '3', text: '어린이 영어교육, 왜 확실한 구어습득이 필요한가?' },
-            { value: '4', text: 'GrapeSEED Elementary' },
-            { value: '5', text: 'Information for Parents' },
-            { value: '6', text: 'LittleSEED at Home Guide' },
-            { value: '7', text: '성공적인 GrapeSEED를 위한 가이드' },
-            { value: '8', text: 'GS Baby' },
-            { value: '9', text: 'GS Online 리플렛' }
-        ];
+        // 브로셔 옵션 목록 로드 (로컬 스토리지에서)
+        function loadBrochureOptions() {
+            const brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
+            return brochures.map(b => ({
+                value: b.id,
+                text: b.name
+            }));
+        }
 
         // 저장된 신청 데이터로 행 추가 함수
         function addRowFromData(request, requestIndex, itemIndex) {
@@ -367,7 +437,8 @@
             rowDiv.dataset.requestIndex = requestIndex;
             rowDiv.dataset.itemIndex = itemIndex;
             
-            // 브로셔 선택 옵션 생성
+            // 브로셔 선택 옵션 생성 (로컬 스토리지에서 로드)
+            const brochureOptions = loadBrochureOptions();
             let brochureOptionsHtml = '<option value="">선택하세요</option>';
             brochureOptions.forEach(option => {
                 const selected = option.value === request.brochure ? 'selected' : '';
@@ -383,6 +454,10 @@
                     <div class="form-group" style="flex: 1;">
                         <label for="schoolname-${rowCount}">기관명</label>
                         <input type="text" id="schoolname-${rowCount}" name="schoolname-${rowCount}" class="schoolname-input" value="${request.schoolname}" disabled style="background-color: #f5f5f5; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group narrow" style="display: flex; flex-direction: column; justify-content: flex-end;">
+                        <div style="font-weight: bold; color: #333; margin-bottom: 5px; font-size: 12px; color: #666;">담당자</div>
+                        <div style="color: #333; font-size: 14px;">${request.contactName || request.contact || '-'}</div>
                     </div>
                 </div>
                 <div class="row-fields">
@@ -411,8 +486,11 @@
                         <div class="invoice-container" id="invoice-container-${rowCount}">
                             <!-- 송장번호 필드들이 여기에 동적으로 추가됩니다 -->
                         </div>
-                        <button type="button" class="btn btn-success btn-small invoice-add-btn" onclick="addInvoiceField(${rowCount})">+ 운송장 번호 추가</button>
+                        <button type="button" class="btn btn-success btn-small invoice-add-btn" onclick="addInvoiceField(${rowCount})" style="margin-top: 10px;">+ 운송장 번호 추가</button>
                     </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                    <button type="button" class="btn btn-primary" onclick="saveSingleInvoice(${rowCount}, ${requestIndex}, ${itemIndex})" style="padding: 10px 20px; font-size: 14px;">저장</button>
                 </div>
             `;
             
@@ -525,14 +603,16 @@
             }, 3000);
         }
 
-        // 폼 제출 처리 - 송장번호만 업데이트
-        document.getElementById('brochureForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+        // 개별 건 저장 함수
+        function saveSingleInvoice(rowId, requestIndex, itemIndex) {
+            // 송장번호 수집
+            const invoices = collectInvoiceFields(rowId);
             
-            // 행이 하나도 없으면 경고
-            const rows = document.querySelectorAll('.row-container');
-            if (rows.length === 0) {
-                showAlert('저장된 신청 내역이 없습니다.', 'danger');
+            // 빈 송장번호 필터링
+            const validInvoices = invoices.filter(inv => inv && inv.trim() !== '');
+            
+            if (validInvoices.length === 0) {
+                showAlert('운송장 번호를 입력해주세요.', 'danger');
                 return;
             }
 
@@ -544,32 +624,28 @@
                 return;
             }
 
-            // 각 행의 송장번호 업데이트
-            let updatedCount = 0;
-            rows.forEach((row) => {
-                const rowId = row.id.replace('row-', '');
-                const requestIndex = parseInt(row.dataset.requestIndex);
-                const itemIndex = parseInt(row.dataset.itemIndex);
-                
-                // 송장번호 수집
-                const invoices = collectInvoiceFields(rowId);
-                
                 // 해당 신청 내역 찾아서 송장번호 업데이트
                 if (allRequests[requestIndex] && allRequests[requestIndex].requests[itemIndex]) {
-                    allRequests[requestIndex].requests[itemIndex].invoices = invoices;
-                    updatedCount++;
-                }
-            });
+                allRequests[requestIndex].requests[itemIndex].invoices = validInvoices;
 
-            // 업데이트된 데이터 저장
+                // 로컬 스토리지에 저장
             localStorage.setItem('brochure_requests', JSON.stringify(allRequests));
 
-            showAlert(`운송장 번호가 ${updatedCount}개 신청에 저장되었습니다!`, 'success');
+                showAlert('운송장 번호가 저장되었습니다!', 'success');
             
-            // 목록 다시 로드 (운송장 번호가 입력된 항목은 자동으로 제거됨)
+                // 해당 행 제거 및 목록 새로고침
             setTimeout(() => {
                 loadSavedRequests();
             }, 500);
+            } else {
+                showAlert('신청 내역을 찾을 수 없습니다.', 'danger');
+            }
+        }
+
+        // 폼 제출 처리 - 더 이상 사용하지 않지만 호환성을 위해 유지
+        document.getElementById('brochureForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            showAlert('각 건마다 개별 저장 버튼을 사용해주세요.', 'danger');
         });
 
         // 저장된 신청 내역 로드 함수 (운송장 번호가 입력되지 않은 항목만 표시)
