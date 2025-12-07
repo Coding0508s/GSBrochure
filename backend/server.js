@@ -177,10 +177,10 @@ app.post('/api/brochures', async (req, res) => {
         }
         
         const result = await runQuery(
-            'INSERT INTO brochures (name, stock) VALUES (?, ?)',
+            'INSERT INTO brochures (name, stock) VALUES ($1, $2) RETURNING id',
             [name, stock]
         );
-        res.json({ id: result.lastID, name, stock });
+        res.json({ id: result.rows[0].id, name, stock });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -193,7 +193,7 @@ app.put('/api/brochures/:id', async (req, res) => {
         const { name, stock } = req.body;
         
         await runQuery(
-            'UPDATE brochures SET name = ?, stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            'UPDATE brochures SET name = $1, stock = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
             [name, stock, id]
         );
         res.json({ success: true });
@@ -206,7 +206,7 @@ app.put('/api/brochures/:id', async (req, res) => {
 app.delete('/api/brochures/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        await runQuery('DELETE FROM brochures WHERE id = ?', [id]);
+        await runQuery('DELETE FROM brochures WHERE id = $1', [id]);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -219,14 +219,14 @@ app.put('/api/brochures/:id/stock', async (req, res) => {
         const { id } = req.params;
         const { quantity, date } = req.body;
         
-        const brochure = await getQuery('SELECT * FROM brochures WHERE id = ?', [id]);
+        const brochure = await getQuery('SELECT * FROM brochures WHERE id = $1', [id]);
         if (!brochure) {
             return res.status(404).json({ error: '브로셔를 찾을 수 없습니다.' });
         }
         
         const newStock = brochure.stock + quantity;
         await runQuery(
-            'UPDATE brochures SET stock = ?, last_stock_quantity = ?, last_stock_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            'UPDATE brochures SET stock = $1, last_stock_quantity = $2, last_stock_date = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4',
             [newStock, quantity, date, id]
         );
         
@@ -256,8 +256,8 @@ app.post('/api/contacts', async (req, res) => {
             return res.status(400).json({ error: '담당자명은 필수입니다.' });
         }
         
-        const result = await runQuery('INSERT INTO contacts (name) VALUES (?)', [name]);
-        res.json({ id: result.lastID, name });
+        const result = await runQuery('INSERT INTO contacts (name) VALUES ($1) RETURNING id', [name]);
+        res.json({ id: result.rows[0].id, name });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -270,7 +270,7 @@ app.put('/api/contacts/:id', async (req, res) => {
         const { name } = req.body;
         
         await runQuery(
-            'UPDATE contacts SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            'UPDATE contacts SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
             [name, id]
         );
         res.json({ success: true });
@@ -283,7 +283,7 @@ app.put('/api/contacts/:id', async (req, res) => {
 app.delete('/api/contacts/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        await runQuery('DELETE FROM contacts WHERE id = ?', [id]);
+        await runQuery('DELETE FROM contacts WHERE id = $1', [id]);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -297,12 +297,12 @@ app.get('/api/requests', async (req, res) => {
     try {
         const requests = await allQuery(`
             SELECT r.*, 
-                   GROUP_CONCAT(ri.brochure_id || ':' || ri.brochure_name || ':' || ri.quantity, '|') as items,
-                   GROUP_CONCAT(i.invoice_number, '|') as invoices
+                   STRING_AGG(DISTINCT ri.brochure_id::text || ':' || ri.brochure_name || ':' || ri.quantity::text, '|') as items,
+                   STRING_AGG(DISTINCT i.invoice_number, '|') as invoices
             FROM requests r
             LEFT JOIN request_items ri ON r.id = ri.request_id
             LEFT JOIN invoices i ON r.id = i.request_id
-            GROUP BY r.id
+            GROUP BY r.id, r.date, r.schoolname, r.address, r.phone, r.contact_id, r.contact_name, r.submitted_at, r.updated_at
             ORDER BY r.submitted_at DESC
         `);
         
@@ -331,60 +331,48 @@ app.post('/api/requests', async (req, res) => {
             return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
         }
         
-        // 트랜잭션 시작
-        const db = require('./database/db').getDatabase();
+        const { pool } = require('./database/db');
+        const client = await pool.connect();
         
-        return new Promise((resolve, reject) => {
-            db.serialize(() => {
-                db.run('BEGIN TRANSACTION');
-                
-                // 신청 내역 추가
-                db.run(
-                    'INSERT INTO requests (date, schoolname, address, phone, contact_id, contact_name) VALUES (?, ?, ?, ?, ?, ?)',
-                    [date, schoolname, address, phone, contact_id, contact_name],
-                    function(err) {
-                        if (err) {
-                            db.run('ROLLBACK');
-                            db.close();
-                            reject(err);
-                            return;
-                        }
-                        
-                        const requestId = this.lastID;
-                        const stmt = db.prepare('INSERT INTO request_items (request_id, brochure_id, brochure_name, quantity) VALUES (?, ?, ?, ?)');
-                        
-                        // 브로셔 항목 추가
-                        brochures.forEach(brochure => {
-                            stmt.run(requestId, brochure.brochure, brochure.brochureName, brochure.quantity);
-                        });
-                        stmt.finalize();
-                        
-                        // 운송장 번호 추가
-                        if (invoices && invoices.length > 0) {
-                            const invoiceStmt = db.prepare('INSERT INTO invoices (request_id, invoice_number) VALUES (?, ?)');
-                            invoices.forEach(invoice => {
-                                if (invoice && invoice.trim()) {
-                                    invoiceStmt.run(requestId, invoice.trim());
-                                }
-                            });
-                            invoiceStmt.finalize();
-                        }
-                        
-                        db.run('COMMIT', (err) => {
-                            db.close();
-                            if (err) {
-                                reject(err);
-                            } else {
-                                resolve({ id: requestId });
-                            }
-                        });
-                    }
+        try {
+            await client.query('BEGIN');
+            
+            // 신청 내역 추가
+            const requestResult = await client.query(
+                'INSERT INTO requests (date, schoolname, address, phone, contact_id, contact_name) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+                [date, schoolname, address, phone, contact_id, contact_name]
+            );
+            
+            const requestId = requestResult.rows[0].id;
+            
+            // 브로셔 항목 추가
+            for (const brochure of brochures) {
+                await client.query(
+                    'INSERT INTO request_items (request_id, brochure_id, brochure_name, quantity) VALUES ($1, $2, $3, $4)',
+                    [requestId, brochure.brochure, brochure.brochureName, brochure.quantity]
                 );
-            });
-        })
-        .then(result => res.json(result))
-        .catch(error => res.status(500).json({ error: error.message }));
-        
+            }
+            
+            // 운송장 번호 추가
+            if (invoices && invoices.length > 0) {
+                for (const invoice of invoices) {
+                    if (invoice && invoice.trim()) {
+                        await client.query(
+                            'INSERT INTO invoices (request_id, invoice_number) VALUES ($1, $2)',
+                            [requestId, invoice.trim()]
+                        );
+                    }
+                }
+            }
+            
+            await client.query('COMMIT');
+            res.json({ id: requestId });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -396,58 +384,39 @@ app.put('/api/requests/:id', async (req, res) => {
         const { id } = req.params;
         const { date, schoolname, address, phone, contact_id, contact_name, brochures } = req.body;
         
-        const db = require('./database/db').getDatabase();
+        const { pool } = require('./database/db');
+        const client = await pool.connect();
         
-        return new Promise((resolve, reject) => {
-            db.serialize(() => {
-                db.run('BEGIN TRANSACTION');
-                
-                // 신청 내역 업데이트
-                db.run(
-                    'UPDATE requests SET date = ?, schoolname = ?, address = ?, phone = ?, contact_id = ?, contact_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                    [date, schoolname, address, phone, contact_id, contact_name, id],
-                    (err) => {
-                        if (err) {
-                            db.run('ROLLBACK');
-                            db.close();
-                            reject(err);
-                            return;
-                        }
-                        
-                        // 기존 항목 삭제
-                        db.run('DELETE FROM request_items WHERE request_id = ?', [id], (err) => {
-                            if (err) {
-                                db.run('ROLLBACK');
-                                db.close();
-                                reject(err);
-                                return;
-                            }
-                            
-                            // 새 항목 추가
-                            if (brochures && brochures.length > 0) {
-                                const stmt = db.prepare('INSERT INTO request_items (request_id, brochure_id, brochure_name, quantity) VALUES (?, ?, ?, ?)');
-                                brochures.forEach(brochure => {
-                                    stmt.run(id, brochure.brochure, brochure.brochureName, brochure.quantity);
-                                });
-                                stmt.finalize();
-                            }
-                            
-                            db.run('COMMIT', (err) => {
-                                db.close();
-                                if (err) {
-                                    reject(err);
-                                } else {
-                                    resolve({ success: true });
-                                }
-                            });
-                        });
-                    }
-                );
-            });
-        })
-        .then(result => res.json(result))
-        .catch(error => res.status(500).json({ error: error.message }));
-        
+        try {
+            await client.query('BEGIN');
+            
+            // 신청 내역 업데이트
+            await client.query(
+                'UPDATE requests SET date = $1, schoolname = $2, address = $3, phone = $4, contact_id = $5, contact_name = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7',
+                [date, schoolname, address, phone, contact_id, contact_name, id]
+            );
+            
+            // 기존 항목 삭제
+            await client.query('DELETE FROM request_items WHERE request_id = $1', [id]);
+            
+            // 새 항목 추가
+            if (brochures && brochures.length > 0) {
+                for (const brochure of brochures) {
+                    await client.query(
+                        'INSERT INTO request_items (request_id, brochure_id, brochure_name, quantity) VALUES ($1, $2, $3, $4)',
+                        [id, brochure.brochure, brochure.brochureName, brochure.quantity]
+                    );
+                }
+            }
+            
+            await client.query('COMMIT');
+            res.json({ success: true });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -463,29 +432,22 @@ app.post('/api/requests/:id/invoices', async (req, res) => {
             return res.status(400).json({ error: '운송장 번호 배열이 필요합니다.' });
         }
         
-        const db = require('./database/db').getDatabase();
+        const { pool } = require('./database/db');
+        const client = await pool.connect();
         
-        return new Promise((resolve, reject) => {
-            db.serialize(() => {
-                const stmt = db.prepare('INSERT INTO invoices (request_id, invoice_number) VALUES (?, ?)');
-                invoices.forEach(invoice => {
-                    if (invoice && invoice.trim()) {
-                        stmt.run(id, invoice.trim());
-                    }
-                });
-                stmt.finalize((err) => {
-                    db.close();
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve({ success: true });
-                    }
-                });
-            });
-        })
-        .then(result => res.json(result))
-        .catch(error => res.status(500).json({ error: error.message }));
-        
+        try {
+            for (const invoice of invoices) {
+                if (invoice && invoice.trim()) {
+                    await client.query(
+                        'INSERT INTO invoices (request_id, invoice_number) VALUES ($1, $2)',
+                        [id, invoice.trim()]
+                    );
+                }
+            }
+            res.json({ success: true });
+        } finally {
+            client.release();
+        }
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -495,7 +457,7 @@ app.post('/api/requests/:id/invoices', async (req, res) => {
 app.delete('/api/requests/:id/invoices', async (req, res) => {
     try {
         const { id } = req.params;
-        await runQuery('DELETE FROM invoices WHERE request_id = ?', [id]);
+        await runQuery('DELETE FROM invoices WHERE request_id = $1', [id]);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -520,7 +482,7 @@ app.post('/api/stock-history', async (req, res) => {
         const { type, date, brochure_id, brochure_name, quantity, contact_name, schoolname, before_stock, after_stock } = req.body;
         
         await runQuery(
-            'INSERT INTO stock_history (type, date, brochure_id, brochure_name, quantity, contact_name, schoolname, before_stock, after_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO stock_history (type, date, brochure_id, brochure_name, quantity, contact_name, schoolname, before_stock, after_stock) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
             [type, date, brochure_id, brochure_name, quantity, contact_name, schoolname, before_stock, after_stock]
         );
         
@@ -541,7 +503,7 @@ app.post('/api/admin/login', async (req, res) => {
             return res.status(400).json({ error: '사용자명과 비밀번호가 필요합니다.' });
         }
         
-        const user = await getQuery('SELECT * FROM admin_users WHERE username = ?', [username]);
+        const user = await getQuery('SELECT * FROM admin_users WHERE username = $1', [username]);
         
         if (!user) {
             return res.status(401).json({ error: '인증 실패' });
@@ -579,7 +541,7 @@ app.post('/api/admin/users', async (req, res) => {
         }
         
         // 중복 확인
-        const existingUser = await getQuery('SELECT * FROM admin_users WHERE username = ?', [username]);
+        const existingUser = await getQuery('SELECT * FROM admin_users WHERE username = $1', [username]);
         if (existingUser) {
             return res.status(400).json({ error: '이미 존재하는 사용자명입니다.' });
         }
@@ -589,13 +551,13 @@ app.post('/api/admin/users', async (req, res) => {
         
         // 계정 생성
         const result = await runQuery(
-            'INSERT INTO admin_users (username, password_hash) VALUES (?, ?)',
+            'INSERT INTO admin_users (username, password_hash) VALUES ($1, $2) RETURNING id',
             [username, passwordHash]
         );
         
         res.json({ 
             success: true, 
-            id: result.lastID, 
+            id: result.rows[0].id, 
             username: username,
             message: '계정이 생성되었습니다.' 
         });
@@ -615,7 +577,7 @@ app.put('/api/admin/users/:id/password', async (req, res) => {
         }
         
         // 사용자 확인
-        const user = await getQuery('SELECT * FROM admin_users WHERE id = ?', [id]);
+        const user = await getQuery('SELECT * FROM admin_users WHERE id = $1', [id]);
         if (!user) {
             return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
         }
@@ -631,7 +593,7 @@ app.put('/api/admin/users/:id/password', async (req, res) => {
         
         // 비밀번호 업데이트
         await runQuery(
-            'UPDATE admin_users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            'UPDATE admin_users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
             [newPasswordHash, id]
         );
         
@@ -647,7 +609,7 @@ app.delete('/api/admin/users/:id', async (req, res) => {
         const { id } = req.params;
         
         // 사용자 확인
-        const user = await getQuery('SELECT * FROM admin_users WHERE id = ?', [id]);
+        const user = await getQuery('SELECT * FROM admin_users WHERE id = $1', [id]);
         if (!user) {
             return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
         }
@@ -659,7 +621,7 @@ app.delete('/api/admin/users/:id', async (req, res) => {
         }
         
         // 계정 삭제
-        await runQuery('DELETE FROM admin_users WHERE id = ?', [id]);
+        await runQuery('DELETE FROM admin_users WHERE id = $1', [id]);
         
         res.json({ success: true, message: '계정이 삭제되었습니다.' });
     } catch (error) {
@@ -667,15 +629,7 @@ app.delete('/api/admin/users/:id', async (req, res) => {
     }
 });
 
-// 데이터베이스 파일 존재 확인 및 자동 초기화
-// Railway Volume 경로 또는 기본 경로 사용
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'database', 'brochure.db');
-const dbDir = path.dirname(dbPath);
-
-// 데이터베이스 디렉토리가 없으면 생성 (Railway Volume 사용 시 필요)
-if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-}
+// PostgreSQL 사용 시 파일 시스템 체크 불필요
 
 // 서버 시작 함수
 function startServer() {
@@ -692,18 +646,14 @@ function startServer() {
 // 데이터베이스 초기화 확인 및 실행
 async function ensureDatabaseInitialized() {
     try {
-        // 데이터베이스 파일이 없으면 초기화
-        if (!fs.existsSync(dbPath)) {
-            console.log('데이터베이스 파일이 없습니다. 초기화를 시작합니다...');
-            await initDatabase();
-            console.log('데이터베이스 자동 초기화 완료');
-            return;
-        }
-
-        // 데이터베이스 파일이 있으면 테이블 존재 여부 확인
+        // PostgreSQL에서 테이블 존재 여부 확인
         const { allQuery } = require('./database/db');
         try {
-            const tables = await allQuery("SELECT name FROM sqlite_master WHERE type='table'");
+            const tables = await allQuery(`
+                SELECT table_name as name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public'
+            `);
             
             // 필수 테이블이 없으면 초기화
             const requiredTables = ['brochures', 'contacts', 'requests', 'request_items', 'invoices', 'stock_history', 'admin_users'];
