@@ -466,8 +466,6 @@ async function ensureDatabaseInitialized() {
         // 데이터베이스 파일이 있으면 테이블 존재 여부 확인
         const { allQuery } = require('./database/db');
         try {
-            // brochures 테이블이 있는지 확인
-            await allQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='brochures'");
             const tables = await allQuery("SELECT name FROM sqlite_master WHERE type='table'");
             
             // 필수 테이블이 없으면 초기화
@@ -479,10 +477,13 @@ async function ensureDatabaseInitialized() {
                 console.log(`필수 테이블이 없습니다: ${missingTables.join(', ')}. 초기화를 시작합니다...`);
                 await initDatabase();
                 console.log('데이터베이스 자동 초기화 완료');
+            } else {
+                console.log('데이터베이스가 정상적으로 초기화되어 있습니다.');
             }
         } catch (err) {
             // 테이블 확인 중 오류 발생 시 초기화 시도
-            console.log('데이터베이스 테이블 확인 중 오류 발생. 초기화를 시작합니다...');
+            console.log('데이터베이스 테이블 확인 중 오류 발생:', err.message);
+            console.log('초기화를 시작합니다...');
             await initDatabase();
             console.log('데이터베이스 자동 초기화 완료');
         }
