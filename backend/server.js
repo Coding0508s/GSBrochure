@@ -2,8 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const fs = require('fs');
 const { runQuery, getQuery, allQuery } = require('./database/db');
 const bcrypt = require('bcrypt');
+const { initDatabase } = require('./database/init-db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -429,13 +431,41 @@ app.post('/api/admin/login', async (req, res) => {
     }
 });
 
-// 서버 시작
-app.listen(PORT, () => {
-    console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
-    console.log(`API 엔드포인트: http://localhost:${PORT}/api`);
-    console.log(`환경: ${process.env.NODE_ENV || 'development'}`);
-    if (process.env.NODE_ENV === 'production') {
-        console.log('프로덕션 모드 활성화');
-    }
-});
+// 데이터베이스 파일 존재 확인 및 자동 초기화
+const dbPath = path.join(__dirname, 'database', 'brochure.db');
+const dbDir = path.dirname(dbPath);
+
+// 데이터베이스 디렉토리가 없으면 생성
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+}
+
+// 서버 시작 함수
+function startServer() {
+    app.listen(PORT, () => {
+        console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
+        console.log(`API 엔드포인트: http://localhost:${PORT}/api`);
+        console.log(`환경: ${process.env.NODE_ENV || 'development'}`);
+        if (process.env.NODE_ENV === 'production') {
+            console.log('프로덕션 모드 활성화');
+        }
+    });
+}
+
+// 데이터베이스 파일이 없으면 자동 초기화
+if (!fs.existsSync(dbPath)) {
+    console.log('데이터베이스 파일이 없습니다. 초기화를 시작합니다...');
+    initDatabase()
+        .then(() => {
+            console.log('데이터베이스 자동 초기화 완료');
+            startServer();
+        })
+        .catch((err) => {
+            console.error('데이터베이스 초기화 오류:', err);
+            // 초기화 실패해도 서버는 시작 (기존 데이터베이스가 있을 수 있음)
+            startServer();
+        });
+} else {
+    startServer();
+}
 
