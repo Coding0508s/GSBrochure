@@ -497,38 +497,69 @@
         </div>
     </div>
 
+    <script src="js/api.js"></script>
     <script>
         let allRequests = [];
         let filteredRequests = [];
         let currentPage = 1;
         const itemsPerPage = 10;
 
-        // 브로셔 옵션 목록 로드 (로컬 스토리지에서)
-        function loadBrochureOptions() {
-            const brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-            return brochures.map(b => ({
-                value: b.id,
-                text: b.name
-            }));
+        // 브로셔 옵션 목록 로드 (API에서)
+        async function loadBrochureOptions() {
+            try {
+                const brochures = await BrochureAPI.getAll();
+                return brochures.map(b => ({
+                    value: b.id,
+                    text: b.name
+                }));
+            } catch (error) {
+                console.error('브로셔 옵션 로드 오류:', error);
+                return [];
+            }
         }
 
-        // 담당자 옵션 목록 로드 (로컬 스토리지에서)
-        function loadContactOptions() {
-            const contacts = JSON.parse(localStorage.getItem('contacts_master') || '[]');
-            return contacts.map(c => ({
-                value: c.id,
-                text: c.name
-            }));
+        // 담당자 옵션 목록 로드 (API에서)
+        async function loadContactOptions() {
+            try {
+                const contacts = await ContactAPI.getAll();
+                return contacts.map(c => ({
+                    value: c.id,
+                    text: c.name
+                }));
+            } catch (error) {
+                console.error('담당자 옵션 로드 오류:', error);
+                return [];
+            }
         }
 
         // 저장된 신청 내역 로드
-        function loadRequests() {
-            const stored = localStorage.getItem('brochure_requests');
-            allRequests = stored ? JSON.parse(stored) : [];
-            filteredRequests = [...allRequests];
-            currentPage = 1;
-            displayRequests();
-            updateStats();
+        async function loadRequests() {
+            try {
+                const requests = await RequestAPI.getAll();
+                // API 응답을 기존 형식으로 변환
+                allRequests = requests.map(req => ({
+                    id: req.id, // API에서 받은 ID 저장
+                    requests: [{
+                        id: req.id, // 요청 ID도 저장
+                        date: req.date,
+                        schoolname: req.schoolname,
+                        address: req.address,
+                        phone: req.phone,
+                        contact: req.contact_id,
+                        contactName: req.contact_name,
+                        brochures: req.items || [],
+                        invoices: req.invoices || []
+                    }],
+                    submittedAt: req.submitted_at
+                }));
+                filteredRequests = [...allRequests];
+                currentPage = 1;
+                displayRequests();
+                updateStats();
+            } catch (error) {
+                console.error('신청 내역 로드 오류:', error);
+                showAlert('신청 내역을 불러오는 중 오류가 발생했습니다.', 'danger');
+            }
         }
 
         // 모든 신청을 평면 배열로 변환
@@ -756,7 +787,7 @@
         }
 
         // 수정 모드로 전환
-        function editRequest(cardId) {
+        async function editRequest(cardId) {
             const card = document.getElementById(cardId);
             if (!card) return;
 
@@ -765,52 +796,57 @@
             const request = filteredRequests[groupIndex]?.requests[requestIndex];
             if (!request) return;
 
-            // 필드들을 편집 가능하게 변경
-            const infoValues = card.querySelectorAll('.info-value');
-            infoValues.forEach(item => {
-                const field = item.dataset.field;
-                const currentValue = item.textContent.trim();
-                
-                if (field === 'date') {
-                    // 날짜는 input[type="date"]로
-                    const dateValue = request.date || '';
-                    item.innerHTML = `<input type="date" value="${dateValue}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">`;
-                } else if (field === 'contactName') {
-                    // 담당자는 select로 (로컬 스토리지에서 로드)
-                    const contactOptions = loadContactOptions();
-                    let optionsHtml = '<option value="">선택하세요</option>';
-                    contactOptions.forEach(opt => {
-                        const selected = opt.value === request.contact ? 'selected' : '';
-                        optionsHtml += `<option value="${opt.value}" ${selected}>${opt.text}</option>`;
-                    });
-                    item.innerHTML = `<select style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">${optionsHtml}</select>`;
-                } else {
-                    // 나머지는 text input으로
-                    item.innerHTML = `<input type="text" value="${currentValue}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">`;
+            try {
+                // 필드들을 편집 가능하게 변경
+                const infoValues = card.querySelectorAll('.info-value');
+                for (const item of infoValues) {
+                    const field = item.dataset.field;
+                    const currentValue = item.textContent.trim();
+                    
+                    if (field === 'date') {
+                        // 날짜는 input[type="date"]로
+                        const dateValue = request.date || '';
+                        item.innerHTML = `<input type="date" value="${dateValue}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">`;
+                    } else if (field === 'contactName') {
+                        // 담당자는 select로 (API에서 로드)
+                        const contactOptions = await loadContactOptions();
+                        let optionsHtml = '<option value="">선택하세요</option>';
+                        contactOptions.forEach(opt => {
+                            const selected = opt.value == request.contact ? 'selected' : '';
+                            optionsHtml += `<option value="${opt.value}" ${selected}>${opt.text}</option>`;
+                        });
+                        item.innerHTML = `<select style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">${optionsHtml}</select>`;
+                    } else {
+                        // 나머지는 text input으로
+                        item.innerHTML = `<input type="text" value="${currentValue}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">`;
+                    }
                 }
-            });
 
-            // 브로셔 목록을 편집 가능하게 변경
-            const brochureContainer = card.querySelector('.brochure-items-container');
-            if (brochureContainer && request.brochures) {
-                const brochureOptions = loadBrochureOptions();
-                let brochureEditHtml = '';
-                request.brochures.forEach((brochure, index) => {
-                    let optionsHtml = '<option value="">선택하세요</option>';
-                    brochureOptions.forEach(opt => {
-                        const selected = opt.value === brochure.brochure ? 'selected' : '';
-                        optionsHtml += `<option value="${opt.value}" ${selected}>${opt.text}</option>`;
+                // 브로셔 목록을 편집 가능하게 변경
+                const brochureContainer = card.querySelector('.brochure-items-container');
+                if (brochureContainer && request.brochures) {
+                    const brochureOptions = await loadBrochureOptions();
+                    let brochureEditHtml = '';
+                    request.brochures.forEach((brochure, index) => {
+                        let optionsHtml = '<option value="">선택하세요</option>';
+                        brochureOptions.forEach(opt => {
+                            const selected = opt.value == brochure.brochure ? 'selected' : '';
+                            optionsHtml += `<option value="${opt.value}" ${selected}>${opt.text}</option>`;
+                        });
+                        brochureEditHtml += `
+                            <div class="brochure-item-edit" data-index="${index}">
+                                <select data-field="brochure" style="flex: 1; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">${optionsHtml}</select>
+                                <input type="number" data-field="quantity" value="${brochure.quantity}" min="1" style="max-width: 100px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                <button type="button" class="btn btn-danger btn-small" onclick="removeBrochureItem(this)">삭제</button>
+                            </div>
+                        `;
                     });
-                    brochureEditHtml += `
-                        <div class="brochure-item-edit" data-index="${index}">
-                            <select data-field="brochure" style="flex: 1; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">${optionsHtml}</select>
-                            <input type="number" data-field="quantity" value="${brochure.quantity}" min="1" style="max-width: 100px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                            <button type="button" class="btn btn-danger btn-small" onclick="removeBrochureItem(this)">삭제</button>
-                        </div>
-                    `;
-                });
-                brochureEditHtml += `<button type="button" class="btn btn-success btn-small" onclick="addBrochureItemEdit('${cardId}')" style="margin-top: 10px;">+ 브로셔 추가</button>`;
-                brochureContainer.innerHTML = brochureEditHtml;
+                    brochureEditHtml += `<button type="button" class="btn btn-success btn-small" onclick="addBrochureItemEdit('${cardId}')" style="margin-top: 10px;">+ 브로셔 추가</button>`;
+                    brochureContainer.innerHTML = brochureEditHtml;
+                }
+            } catch (error) {
+                console.error('수정 모드 전환 오류:', error);
+                showAlert('수정 모드로 전환하는 중 오류가 발생했습니다.', 'danger');
             }
 
             // 수정/취소 버튼으로 변경
@@ -824,16 +860,17 @@
         }
 
         // 브로셔 항목 추가 (수정 모드)
-        function addBrochureItemEdit(cardId) {
+        async function addBrochureItemEdit(cardId) {
             const card = document.getElementById(cardId);
             const container = card.querySelector('.brochure-items-container');
             if (!container) return;
 
-            const brochureOptions = loadBrochureOptions();
-            let optionsHtml = '<option value="">선택하세요</option>';
-            brochureOptions.forEach(opt => {
-                optionsHtml += `<option value="${opt.value}">${opt.text}</option>`;
-            });
+            try {
+                const brochureOptions = await loadBrochureOptions();
+                let optionsHtml = '<option value="">선택하세요</option>';
+                brochureOptions.forEach(opt => {
+                    optionsHtml += `<option value="${opt.value}">${opt.text}</option>`;
+                });
 
             const newItem = document.createElement('div');
             newItem.className = 'brochure-item-edit';
@@ -851,7 +888,7 @@
         }
 
         // 수정 저장
-        function saveRequest(cardId) {
+        async function saveRequest(cardId) {
             const card = document.getElementById(cardId);
             if (!card) return;
 
@@ -866,21 +903,86 @@
                     const contactSelect = card.querySelector('[data-field="contactName"] select');
                     const contact = contactSelect?.value || '';
                     const contactName = contactSelect?.options[contactSelect.selectedIndex]?.text || '';
-                    
-                    // 담당자 옵션 로드
-                    const contactOptions = loadContactOptions();
-                    if (contactSelect) {
-                        contactSelect.innerHTML = '<option value="">선택하세요</option>';
-                        contactOptions.forEach(opt => {
-                            const option = document.createElement('option');
-                            option.value = opt.value;
-                            option.textContent = opt.text;
-                            if (opt.value === contact) {
-                                option.selected = true;
-                            }
-                            contactSelect.appendChild(option);
-                        });
-                    }
+
+            // 브로셔 항목 수집
+            const brochures = [];
+            const brochureItems = card.querySelectorAll('.brochure-item-edit');
+            brochureItems.forEach(item => {
+                const brochureSelect = item.querySelector('[data-field="brochure"]');
+                const quantityInput = item.querySelector('[data-field="quantity"]');
+                if (brochureSelect && brochureSelect.value && quantityInput && quantityInput.value) {
+                    brochures.push({
+                        brochure: brochureSelect.value,
+                        brochureName: brochureSelect.options[brochureSelect.selectedIndex].text,
+                        quantity: parseInt(quantityInput.value)
+                    });
+                }
+            });
+
+            if (!schoolname || !address || !phone || !date || brochures.length === 0) {
+                alert('모든 필수 항목을 입력해주세요.');
+                return;
+            }
+
+            // API를 통해 업데이트
+            try {
+                // 현재 요청의 ID 찾기
+                const flatList = flattenRequests();
+                const currentItem = flatList.find(item => 
+                    item.groupIndex === groupIndex && item.requestIndex === requestIndex
+                );
+                
+                if (!currentItem) {
+                    alert('신청 내역을 찾을 수 없습니다.');
+                    return;
+                }
+                
+                // API에서 요청 ID 가져오기
+                const requestId = allRequests[groupIndex]?.id || allRequests[groupIndex]?.requests?.[requestIndex]?.id;
+                
+                if (!requestId) {
+                    alert('요청 ID를 찾을 수 없습니다.');
+                    return;
+                }
+                
+                await RequestAPI.update(requestId, {
+                    date: date,
+                    schoolname: schoolname,
+                    address: address,
+                    phone: phone,
+                    contact_id: contact,
+                    contact_name: contactName,
+                    brochures: brochures.map(b => ({
+                        brochure: b.brochure,
+                        brochureName: b.brochureName,
+                        quantity: b.quantity
+                    }))
+                });
+                
+                await loadRequests();
+                showAlert('신청 내역이 수정되었습니다.', 'success');
+            } catch (error) {
+                console.error('수정 오류:', error);
+                alert('수정 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+        
+        // 기존 코드 (참고용 - 제거 예정)
+        function saveRequest_old(cardId) {
+            const card = document.getElementById(cardId);
+            if (!card) return;
+
+            const groupIndex = parseInt(card.dataset.groupIndex);
+            const requestIndex = parseInt(card.dataset.requestIndex);
+            
+            // 필드 값 수집
+            const schoolname = card.querySelector('[data-field="schoolname"] input')?.value || '';
+            const address = card.querySelector('[data-field="address"] input')?.value || '';
+            const phone = card.querySelector('[data-field="phone"] input')?.value || '';
+            const date = card.querySelector('[data-field="date"] input')?.value || '';
+            const contactSelect = card.querySelector('[data-field="contactName"] select');
+            const contact = contactSelect?.value || '';
+            const contactName = contactSelect?.options[contactSelect.selectedIndex]?.text || '';
 
             // 브로셔 항목 수집
             const brochures = [];

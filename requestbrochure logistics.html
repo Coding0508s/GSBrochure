@@ -11,6 +11,7 @@
             document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>');
         }
     </script>
+    <script src="js/api.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -417,17 +418,22 @@
         const itemsPerPage = 10;
         let allPendingRequests = [];
 
-        // 브로셔 옵션 목록 로드 (로컬 스토리지에서)
-        function loadBrochureOptions() {
-            const brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-            return brochures.map(b => ({
-                value: b.id,
-                text: b.name
-            }));
+        // 브로셔 옵션 목록 로드 (API에서)
+        async function loadBrochureOptions() {
+            try {
+                const brochures = await BrochureAPI.getAll();
+                return brochures.map(b => ({
+                    value: b.id,
+                    text: b.name
+                }));
+            } catch (error) {
+                console.error('브로셔 옵션 로드 오류:', error);
+                return [];
+            }
         }
 
         // 저장된 신청 데이터로 행 추가 함수
-        function addRowFromData(request, requestIndex, itemIndex) {
+        async function addRowFromData(request, requestIndex, itemIndex, requestId) {
             rowCount++;
             const rowsContainer = document.getElementById('rowsContainer');
             
@@ -436,14 +442,16 @@
             rowDiv.id = `row-${rowCount}`;
             rowDiv.dataset.requestIndex = requestIndex;
             rowDiv.dataset.itemIndex = itemIndex;
+            rowDiv.dataset.requestId = requestId; // API 요청 ID 저장
             
-            // 브로셔 선택 옵션 생성 (로컬 스토리지에서 로드)
-            const brochureOptions = loadBrochureOptions();
-            let brochureOptionsHtml = '<option value="">선택하세요</option>';
-            brochureOptions.forEach(option => {
-                const selected = option.value === request.brochure ? 'selected' : '';
-                brochureOptionsHtml += `<option value="${option.value}" ${selected}>${option.text}</option>`;
-            });
+            try {
+                // 브로셔 선택 옵션 생성 (API에서 로드)
+                const brochureOptions = await loadBrochureOptions();
+                let brochureOptionsHtml = '<option value="">선택하세요</option>';
+                brochureOptions.forEach(option => {
+                    const selected = option.value == request.brochure ? 'selected' : '';
+                    brochureOptionsHtml += `<option value="${option.value}" ${selected}>${option.text}</option>`;
+                });
 
             rowDiv.innerHTML = `
                 <div class="row-header">
@@ -494,7 +502,10 @@
                 </div>
             `;
             
-            rowsContainer.appendChild(rowDiv);
+                rowsContainer.appendChild(rowDiv);
+            } catch (error) {
+                console.error('행 추가 오류:', error);
+            }
             // 저장된 송장번호가 있으면 표시, 없으면 기본 필드 하나 추가
             if (request.invoices && request.invoices.length > 0) {
                 request.invoices.forEach((invoice, index) => {
@@ -604,41 +615,40 @@
         }
 
         // 개별 건 저장 함수
-        function saveSingleInvoice(rowId, requestIndex, itemIndex) {
+        async function saveSingleInvoice(rowId, requestIndex, itemIndex) {
             // 송장번호 수집
             const invoices = collectInvoiceFields(rowId);
             
             // 빈 송장번호 필터링
             const validInvoices = invoices.filter(inv => inv && inv.trim() !== '');
-            
+
             if (validInvoices.length === 0) {
                 showAlert('운송장 번호를 입력해주세요.', 'danger');
                 return;
             }
 
-            // 로컬 스토리지에서 모든 신청 내역 가져오기
-            let allRequests = JSON.parse(localStorage.getItem('brochure_requests') || '[]');
-            
-            if (allRequests.length === 0) {
-                showAlert('저장된 신청 내역이 없습니다.', 'danger');
-                return;
-            }
+            try {
+                // 행에서 requestId 가져오기
+                const row = document.getElementById(`row-${rowId}`);
+                const requestId = row?.dataset?.requestId;
+                
+                if (!requestId) {
+                    showAlert('요청 ID를 찾을 수 없습니다.', 'danger');
+                    return;
+                }
 
-                // 해당 신청 내역 찾아서 송장번호 업데이트
-                if (allRequests[requestIndex] && allRequests[requestIndex].requests[itemIndex]) {
-                allRequests[requestIndex].requests[itemIndex].invoices = validInvoices;
-
-                // 로컬 스토리지에 저장
-            localStorage.setItem('brochure_requests', JSON.stringify(allRequests));
+                // API를 통해 운송장 번호 추가
+                await RequestAPI.addInvoices(requestId, validInvoices);
 
                 showAlert('운송장 번호가 저장되었습니다!', 'success');
             
                 // 해당 행 제거 및 목록 새로고침
-            setTimeout(() => {
-                loadSavedRequests();
-            }, 500);
-            } else {
-                showAlert('신청 내역을 찾을 수 없습니다.', 'danger');
+                setTimeout(() => {
+                    loadSavedRequests();
+                }, 500);
+            } catch (error) {
+                console.error('운송장 번호 저장 오류:', error);
+                showAlert('운송장 번호 저장 중 오류가 발생했습니다: ' + error.message, 'danger');
             }
         }
 
@@ -649,46 +659,57 @@
         });
 
         // 저장된 신청 내역 로드 함수 (운송장 번호가 입력되지 않은 항목만 표시)
-        function loadSavedRequests() {
-            const allRequests = JSON.parse(localStorage.getItem('brochure_requests') || '[]');
-            const rowsContainer = document.getElementById('rowsContainer');
-            rowsContainer.innerHTML = '';
+        async function loadSavedRequests() {
+            try {
+                const allRequests = await RequestAPI.getAll();
+                const rowsContainer = document.getElementById('rowsContainer');
+                rowsContainer.innerHTML = '';
 
-            if (allRequests.length === 0) {
-                rowsContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">저장된 신청 내역이 없습니다.</p>';
-                document.getElementById('pagination').innerHTML = '';
-                document.getElementById('paginationInfo').textContent = '';
-                return;
-            }
-
-            // 운송장 번호가 입력되지 않은 신청 내역 수집
-            allPendingRequests = [];
-            allRequests.forEach((requestGroup, requestIndex) => {
-                if (requestGroup.requests && requestGroup.requests.length > 0) {
-                    requestGroup.requests.forEach((request, itemIndex) => {
-                        // 운송장 번호가 없거나 비어있는 경우만 수집
-                        if (!request.invoices || request.invoices.length === 0 || 
-                            request.invoices.every(inv => !inv || inv.trim() === '')) {
-                            allPendingRequests.push({
-                                request: request,
-                                requestIndex: requestIndex,
-                                itemIndex: itemIndex
-                            });
-                        }
-                    });
+                if (allRequests.length === 0) {
+                    rowsContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">저장된 신청 내역이 없습니다.</p>';
+                    document.getElementById('pagination').innerHTML = '';
+                    document.getElementById('paginationInfo').textContent = '';
+                    return;
                 }
-            });
 
-            if (allPendingRequests.length === 0) {
-                rowsContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">운송장 번호 입력이 필요한 신청 내역이 없습니다.</p>';
-                document.getElementById('pagination').innerHTML = '';
-                document.getElementById('paginationInfo').textContent = '';
-                return;
+                // 운송장 번호가 입력되지 않은 신청 내역 수집
+                allPendingRequests = [];
+                allRequests.forEach((req) => {
+                    // 운송장 번호가 없거나 비어있는 경우만 수집
+                    if (!req.invoices || req.invoices.length === 0 || 
+                        req.invoices.every(inv => !inv || inv.trim() === '')) {
+                        // API 응답을 기존 형식으로 변환
+                        const request = {
+                            date: req.date,
+                            schoolname: req.schoolname,
+                            address: req.address,
+                            phone: req.phone,
+                            contact: req.contact_id,
+                            contactName: req.contact_name,
+                            brochures: req.items || [],
+                            invoices: req.invoices || []
+                        };
+                        allPendingRequests.push({
+                            request: request,
+                            requestId: req.id // API 요청 ID 저장
+                        });
+                    }
+                });
+
+                if (allPendingRequests.length === 0) {
+                    rowsContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">운송장 번호 입력이 필요한 신청 내역이 없습니다.</p>';
+                    document.getElementById('pagination').innerHTML = '';
+                    document.getElementById('paginationInfo').textContent = '';
+                    return;
+                }
+
+                // 페이지네이션 적용
+                currentPage = 1;
+                displayPagedRequests();
+            } catch (error) {
+                console.error('신청 내역 로드 오류:', error);
+                showAlert('신청 내역을 불러오는 중 오류가 발생했습니다.', 'danger');
             }
-
-            // 페이지네이션 적용
-            currentPage = 1;
-            displayPagedRequests();
         }
 
         // 페이지네이션 적용된 신청 내역 표시
@@ -703,8 +724,8 @@
             const pageItems = allPendingRequests.slice(startIndex, endIndex);
 
             // 현재 페이지의 항목만 표시
-            pageItems.forEach(item => {
-                addRowFromData(item.request, item.requestIndex, item.itemIndex);
+            pageItems.forEach(async item => {
+                await addRowFromData(item.request, item.requestIndex || 0, item.itemIndex || 0, item.requestId);
             });
 
             // 페이지네이션 UI 업데이트

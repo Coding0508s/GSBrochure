@@ -11,6 +11,7 @@
             document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>');
         }
     </script>
+    <script src="js/api.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -609,35 +610,9 @@
             return true;
         }
 
-        // 초기 데이터 설정
-        function initializeData() {
-            // 브로셔 마스터 데이터 초기화
-            if (!localStorage.getItem('brochure_master')) {
-                const defaultBrochures = [
-                    { id: '1', name: 'LittleSEED Play in English', stock: 0 },
-                    { id: '2', name: 'Think in English, Speak in English', stock: 0 },
-                    { id: '3', name: '어린이 영어교육, 왜 확실한 구어습득이 필요한가?', stock: 0 },
-                    { id: '4', name: 'GrapeSEED Elementary', stock: 0 },
-                    { id: '5', name: 'Information for Parents', stock: 0 },
-                    { id: '6', name: 'LittleSEED at Home Guide', stock: 0 },
-                    { id: '7', name: '성공적인 GrapeSEED를 위한 가이드', stock: 0 },
-                    { id: '8', name: 'GS Baby', stock: 0 },
-                    { id: '9', name: 'GS Online 리플렛', stock: 0 }
-                ];
-                localStorage.setItem('brochure_master', JSON.stringify(defaultBrochures));
-            }
-
-            // 담당자 마스터 데이터 초기화
-            if (!localStorage.getItem('contacts_master')) {
-                const defaultContacts = [
-                    { id: '1', name: 'Addy Kim' },
-                    { id: '2', name: 'Peter Kim' },
-                    { id: '4', name: 'Ryan Koh' },
-                    { id: '5', name: 'Daniel Kim' },
-                    { id: '6', name: 'Ron Shin' }
-                ];
-                localStorage.setItem('contacts_master', JSON.stringify(defaultContacts));
-            }
+        // 초기 데이터 설정 (더 이상 필요 없음 - 백엔드에서 처리)
+        async function initializeData() {
+            // 백엔드에서 데이터를 가져오므로 초기화 불필요
         }
 
         // 알림 표시
@@ -653,59 +628,68 @@
         }
 
         // 브로셔 목록 로드 및 표시
-        function loadBrochures() {
-            const brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-            const tbody = document.getElementById('brochureTableBody');
-            tbody.innerHTML = '';
+        async function loadBrochures() {
+            try {
+                const brochures = await BrochureAPI.getAll();
+                const tbody = document.getElementById('brochureTableBody');
+                tbody.innerHTML = '';
 
-            brochures.forEach(brochure => {
-                const row = document.createElement('tr');
-                const stockClass = brochure.stock < 10 ? 'stock-low' : 'stock-ok';
-                const lastStockQuantity = brochure.lastStockQuantity || 0;
-                const lastStockDate = brochure.lastStockDate || '-';
-                row.innerHTML = `
-                    <td data-label="ID">${brochure.id}</td>
-                    <td data-label="브로셔명">${brochure.name}</td>
-                    <td data-label="현재 재고" class="${stockClass}">${brochure.stock}권</td>
-                    <td data-label="마지막 입고">${lastStockQuantity > 0 ? `${lastStockQuantity}권 (${lastStockDate})` : '-'}</td>
-                    <td data-label="입고">
-                        <button class="btn btn-success btn-small" onclick="openStockModal('${brochure.id}')">입고</button>
-                    </td>
-                    <td data-label="작업">
-                        <button class="btn btn-primary btn-small" onclick="editBrochure('${brochure.id}')">수정</button>
-                        <button class="btn btn-secondary btn-small" onclick="openStockEditModal('${brochure.id}')">재고 수정</button>
-                        <button class="btn btn-danger btn-small" onclick="deleteBrochure('${brochure.id}')">삭제</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
+                brochures.forEach(brochure => {
+                    const row = document.createElement('tr');
+                    const stockClass = (brochure.stock || 0) < 10 ? 'stock-low' : 'stock-ok';
+                    const lastStockQuantity = brochure.last_stock_quantity || 0;
+                    const lastStockDate = brochure.last_stock_date || '-';
+                    row.innerHTML = `
+                        <td data-label="ID">${brochure.id}</td>
+                        <td data-label="브로셔명">${brochure.name}</td>
+                        <td data-label="현재 재고" class="${stockClass}">${brochure.stock || 0}권</td>
+                        <td data-label="마지막 입고">${lastStockQuantity > 0 ? `${lastStockQuantity}권 (${lastStockDate})` : '-'}</td>
+                        <td data-label="입고">
+                            <button class="btn btn-success btn-small" onclick="openStockModal('${brochure.id}')">입고</button>
+                        </td>
+                        <td data-label="작업">
+                            <button class="btn btn-primary btn-small" onclick="editBrochure('${brochure.id}')">수정</button>
+                            <button class="btn btn-secondary btn-small" onclick="openStockEditModal('${brochure.id}')">재고 수정</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteBrochure('${brochure.id}')">삭제</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
 
-            updateStats();
+                updateStats(brochures);
+            } catch (error) {
+                console.error('브로셔 로드 오류:', error);
+                showAlert('브로셔 목록을 불러오는 중 오류가 발생했습니다.', 'danger');
+            }
         }
 
         // 담당자 목록 로드 및 표시
-        function loadContacts() {
-            const contacts = JSON.parse(localStorage.getItem('contacts_master') || '[]');
-            const tbody = document.getElementById('contactTableBody');
-            tbody.innerHTML = '';
+        async function loadContacts() {
+            try {
+                const contacts = await ContactAPI.getAll();
+                const tbody = document.getElementById('contactTableBody');
+                tbody.innerHTML = '';
 
-            contacts.forEach(contact => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td data-label="ID">${contact.id}</td>
-                    <td data-label="담당자명">${contact.name}</td>
-                    <td data-label="작업">
-                        <button class="btn btn-primary btn-small" onclick="editContact('${contact.id}')">수정</button>
-                        <button class="btn btn-danger btn-small" onclick="deleteContact('${contact.id}')">삭제</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
+                contacts.forEach(contact => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td data-label="ID">${contact.id}</td>
+                        <td data-label="담당자명">${contact.name}</td>
+                        <td data-label="작업">
+                            <button class="btn btn-primary btn-small" onclick="editContact('${contact.id}')">수정</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteContact('${contact.id}')">삭제</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('담당자 로드 오류:', error);
+                showAlert('담당자 목록을 불러오는 중 오류가 발생했습니다.', 'danger');
+            }
         }
 
         // 통계 업데이트
-        function updateStats() {
-            const brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
+        function updateStats(brochures = []) {
             const totalStock = brochures.reduce((sum, b) => sum + (b.stock || 0), 0);
             // 재고 부족 기준: 400권 이하
             const lowStockCount = brochures.filter(b => (b.stock || 0) <= 400).length;
@@ -737,10 +721,11 @@
         }
 
         // 품목별 재고 현황 테이블 업데이트
-        function updateStockTable() {
-            const brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-            const tbody = document.getElementById('stockTableBody');
-            tbody.innerHTML = '';
+        async function updateStockTable() {
+            try {
+                const brochures = await BrochureAPI.getAll();
+                const tbody = document.getElementById('stockTableBody');
+                tbody.innerHTML = '';
 
             if (brochures.length === 0) {
                 tbody.innerHTML = `
@@ -772,12 +757,15 @@
                         <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span>
                     </td>
                 `;
-                tbody.appendChild(row);
-            });
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('재고 현황 업데이트 오류:', error);
+            }
         }
 
         // 브로셔 모달 열기
-        function openBrochureModal(id = null) {
+        async function openBrochureModal(id = null) {
             const modal = document.getElementById('brochureModal');
             const form = document.getElementById('brochureForm');
             const title = document.getElementById('brochureModalTitle');
@@ -785,13 +773,18 @@
 
             if (id) {
                 // 수정 모드
-                const brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-                const brochure = brochures.find(b => b.id === id);
-                if (brochure) {
-                    document.getElementById('brochureId').value = brochure.id;
-                    document.getElementById('brochureName').value = brochure.name;
-                    title.textContent = '브로셔 수정';
-                    stockGroup.style.display = 'none';
+                try {
+                    const brochures = await BrochureAPI.getAll();
+                    const brochure = brochures.find(b => b.id == id);
+                    if (brochure) {
+                        document.getElementById('brochureId').value = brochure.id;
+                        document.getElementById('brochureName').value = brochure.name;
+                        title.textContent = '브로셔 수정';
+                        stockGroup.style.display = 'none';
+                    }
+                } catch (error) {
+                    showAlert('브로셔 정보를 불러오는 중 오류가 발생했습니다.', 'danger');
+                    return;
                 }
             } else {
                 // 추가 모드
@@ -810,68 +803,73 @@
         }
 
         // 브로셔 저장
-        document.getElementById('brochureForm').addEventListener('submit', function(e) {
+        document.getElementById('brochureForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const id = document.getElementById('brochureId').value;
             const name = document.getElementById('brochureName').value;
             const initialStock = parseInt(document.getElementById('brochureStock').value) || 0;
 
-            let brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-
-            if (id) {
-                // 수정
-                const index = brochures.findIndex(b => b.id === id);
-                if (index !== -1) {
-                    brochures[index].name = name;
+            try {
+                if (id) {
+                    // 수정
+                    await BrochureAPI.update(id, { name, stock: initialStock });
+                    showAlert('브로셔가 수정되었습니다.');
+                } else {
+                    // 추가
+                    await BrochureAPI.create({ name, stock: initialStock });
+                    showAlert('브로셔가 추가되었습니다.');
                 }
-            } else {
-                // 추가
-                const newId = brochures.length > 0 
-                    ? String(Math.max(...brochures.map(b => parseInt(b.id))) + 1)
-                    : '1';
-                brochures.push({
-                    id: newId,
-                    name: name,
-                    stock: initialStock
-                });
+                
+                await loadBrochures();
+                closeBrochureModal();
+            } catch (error) {
+                showAlert('브로셔 저장 중 오류가 발생했습니다: ' + error.message, 'danger');
             }
-
-            localStorage.setItem('brochure_master', JSON.stringify(brochures));
-            loadBrochures();
-            closeBrochureModal();
-            showAlert(id ? '브로셔가 수정되었습니다.' : '브로셔가 추가되었습니다.');
         });
 
         // 브로셔 수정
-        function editBrochure(id) {
-            openBrochureModal(id);
+        async function editBrochure(id) {
+            try {
+                const brochures = await BrochureAPI.getAll();
+                const brochure = brochures.find(b => b.id == id);
+                if (brochure) {
+                    openBrochureModal(id);
+                }
+            } catch (error) {
+                showAlert('브로셔 정보를 불러오는 중 오류가 발생했습니다.', 'danger');
+            }
         }
 
         // 브로셔 삭제
-        function deleteBrochure(id) {
+        async function deleteBrochure(id) {
             if (!confirm('정말 삭제하시겠습니까?')) return;
 
-            let brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-            brochures = brochures.filter(b => b.id !== id);
-            localStorage.setItem('brochure_master', JSON.stringify(brochures));
-            loadBrochures();
-            showAlert('브로셔가 삭제되었습니다.');
+            try {
+                await BrochureAPI.delete(id);
+                await loadBrochures();
+                showAlert('브로셔가 삭제되었습니다.');
+            } catch (error) {
+                showAlert('브로셔 삭제 중 오류가 발생했습니다: ' + error.message, 'danger');
+            }
         }
 
         // 입고 처리 모달 열기
-        function openStockModal(id) {
-            const modal = document.getElementById('stockModal');
-            const form = document.getElementById('stockForm');
-            const brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-            const brochure = brochures.find(b => b.id === id);
-            
-            if (brochure) {
-                document.getElementById('stockBrochureId').value = id;
-                document.getElementById('stockBrochureName').textContent = `브로셔명: ${brochure.name}`;
-                document.getElementById('stockDate').value = new Date().toISOString().split('T')[0];
-                document.getElementById('stockQuantity').value = 1;
-                modal.style.display = 'block';
+        async function openStockModal(id) {
+            try {
+                const brochures = await BrochureAPI.getAll();
+                const brochure = brochures.find(b => b.id == id);
+                
+                if (brochure) {
+                    const modal = document.getElementById('stockModal');
+                    document.getElementById('stockBrochureId').value = id;
+                    document.getElementById('stockBrochureName').textContent = `브로셔명: ${brochure.name}`;
+                    document.getElementById('stockDate').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('stockQuantity').value = 1;
+                    modal.style.display = 'block';
+                }
+            } catch (error) {
+                showAlert('브로셔 정보를 불러오는 중 오류가 발생했습니다.', 'danger');
             }
         }
 
@@ -882,7 +880,7 @@
         }
 
         // 입고 처리
-        document.getElementById('stockForm').addEventListener('submit', function(e) {
+        document.getElementById('stockForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const id = document.getElementById('stockBrochureId').value;
@@ -899,46 +897,56 @@
                 return;
             }
 
-            let brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-            const index = brochures.findIndex(b => b.id === id);
-            
-            if (index !== -1) {
-                const beforeStock = brochures[index].stock || 0;
-                brochures[index].stock = beforeStock + quantity;
-                brochures[index].lastStockQuantity = quantity;
-                brochures[index].lastStockDate = date;
-                localStorage.setItem('brochure_master', JSON.stringify(brochures));
+            try {
+                // 현재 재고 조회
+                const brochures = await BrochureAPI.getAll();
+                const brochure = brochures.find(b => b.id == id);
+                
+                if (!brochure) {
+                    showAlert('브로셔를 찾을 수 없습니다.', 'danger');
+                    return;
+                }
+                
+                const beforeStock = brochure.stock || 0;
+                
+                // 재고 업데이트
+                await BrochureAPI.updateStock(id, quantity, date);
                 
                 // 입고 내역 저장
-                recordStockTransaction({
+                await StockHistoryAPI.create({
                     type: '입고',
                     date: date,
-                    brochureId: id,
-                    brochureName: brochures[index].name,
+                    brochure_id: id,
+                    brochure_name: brochure.name,
                     quantity: quantity,
-                    contactName: '관리자',
-                    beforeStock: beforeStock,
-                    afterStock: beforeStock + quantity
+                    contact_name: '관리자',
+                    before_stock: beforeStock,
+                    after_stock: beforeStock + quantity
                 });
                 
-                loadBrochures();
+                await loadBrochures();
                 showAlert(`${quantity}권이 입고되었습니다. (입고일: ${date})`);
                 closeStockModal();
+            } catch (error) {
+                showAlert('입고 처리 중 오류가 발생했습니다: ' + error.message, 'danger');
             }
         });
 
         // 재고 수정 모달 열기
-        function openStockEditModal(id) {
-            const modal = document.getElementById('stockEditModal');
-            const form = document.getElementById('stockEditForm');
-            const brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-            const brochure = brochures.find(b => b.id === id);
-            
-            if (brochure) {
-                document.getElementById('stockEditBrochureId').value = id;
-                document.getElementById('stockEditBrochureName').textContent = `브로셔명: ${brochure.name}`;
-                document.getElementById('stockEditQuantity').value = brochure.stock || 0;
-                modal.style.display = 'block';
+        async function openStockEditModal(id) {
+            try {
+                const brochures = await BrochureAPI.getAll();
+                const brochure = brochures.find(b => b.id == id);
+                
+                if (brochure) {
+                    const modal = document.getElementById('stockEditModal');
+                    document.getElementById('stockEditBrochureId').value = id;
+                    document.getElementById('stockEditBrochureName').textContent = `브로셔명: ${brochure.name}`;
+                    document.getElementById('stockEditQuantity').value = brochure.stock || 0;
+                    modal.style.display = 'block';
+                }
+            } catch (error) {
+                showAlert('브로셔 정보를 불러오는 중 오류가 발생했습니다.', 'danger');
             }
         }
 
@@ -949,7 +957,7 @@
         }
 
         // 재고 수정
-        document.getElementById('stockEditForm').addEventListener('submit', function(e) {
+        document.getElementById('stockEditForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const id = document.getElementById('stockEditBrochureId').value;
@@ -960,33 +968,35 @@
                 return;
             }
 
-            let brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-            const index = brochures.findIndex(b => b.id === id);
-            
-            if (index !== -1) {
-                brochures[index].stock = quantity;
-                localStorage.setItem('brochure_master', JSON.stringify(brochures));
-                loadBrochures();
-                updateStats(); // 품목별 재고 현황도 업데이트
+            try {
+                await BrochureAPI.update(id, { stock: quantity });
+                await loadBrochures();
                 showAlert('재고가 수정되었습니다.');
                 closeStockEditModal();
+            } catch (error) {
+                showAlert('재고 수정 중 오류가 발생했습니다: ' + error.message, 'danger');
             }
         });
 
         // 담당자 모달 열기
-        function openContactModal(id = null) {
+        async function openContactModal(id = null) {
             const modal = document.getElementById('contactModal');
             const form = document.getElementById('contactForm');
             const title = document.getElementById('contactModalTitle');
 
             if (id) {
                 // 수정 모드
-                const contacts = JSON.parse(localStorage.getItem('contacts_master') || '[]');
-                const contact = contacts.find(c => c.id === id);
-                if (contact) {
-                    document.getElementById('contactId').value = contact.id;
-                    document.getElementById('contactName').value = contact.name;
-                    title.textContent = '담당자 수정';
+                try {
+                    const contacts = await ContactAPI.getAll();
+                    const contact = contacts.find(c => c.id == id);
+                    if (contact) {
+                        document.getElementById('contactId').value = contact.id;
+                        document.getElementById('contactName').value = contact.name;
+                        title.textContent = '담당자 수정';
+                    }
+                } catch (error) {
+                    showAlert('담당자 정보를 불러오는 중 오류가 발생했습니다.', 'danger');
+                    return;
                 }
             } else {
                 // 추가 모드
@@ -1004,35 +1014,28 @@
         }
 
         // 담당자 저장
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
+        document.getElementById('contactForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const id = document.getElementById('contactId').value;
             const name = document.getElementById('contactName').value;
 
-            let contacts = JSON.parse(localStorage.getItem('contacts_master') || '[]');
-
-            if (id) {
-                // 수정
-                const index = contacts.findIndex(c => c.id === id);
-                if (index !== -1) {
-                    contacts[index].name = name;
+            try {
+                if (id) {
+                    // 수정
+                    await ContactAPI.update(id, { name });
+                    showAlert('담당자가 수정되었습니다.');
+                } else {
+                    // 추가
+                    await ContactAPI.create({ name });
+                    showAlert('담당자가 추가되었습니다.');
                 }
-            } else {
-                // 추가
-                const newId = contacts.length > 0 
-                    ? String(Math.max(...contacts.map(c => parseInt(c.id))) + 1)
-                    : '1';
-                contacts.push({
-                    id: newId,
-                    name: name
-                });
+                
+                await loadContacts();
+                closeContactModal();
+            } catch (error) {
+                showAlert('담당자 저장 중 오류가 발생했습니다: ' + error.message, 'danger');
             }
-
-            localStorage.setItem('contacts_master', JSON.stringify(contacts));
-            loadContacts();
-            closeContactModal();
-            showAlert(id ? '담당자가 수정되었습니다.' : '담당자가 추가되었습니다.');
         });
 
         // 담당자 수정
@@ -1041,36 +1044,46 @@
         }
 
         // 담당자 삭제
-        function deleteContact(id) {
+        async function deleteContact(id) {
             if (!confirm('정말 삭제하시겠습니까?')) return;
 
-            let contacts = JSON.parse(localStorage.getItem('contacts_master') || '[]');
-            contacts = contacts.filter(c => c.id !== id);
-            localStorage.setItem('contacts_master', JSON.stringify(contacts));
-            loadContacts();
-            showAlert('담당자가 삭제되었습니다.');
+            try {
+                await ContactAPI.delete(id);
+                await loadContacts();
+                showAlert('담당자가 삭제되었습니다.');
+            } catch (error) {
+                showAlert('담당자 삭제 중 오류가 발생했습니다: ' + error.message, 'danger');
+            }
         }
 
         // 입출고 내역 저장 함수
-        function recordStockTransaction(transaction) {
-            let history = JSON.parse(localStorage.getItem('stock_history') || '[]');
-            history.push({
-                ...transaction,
-                timestamp: new Date().toISOString()
-            });
-            // 최신순으로 정렬
-            history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            localStorage.setItem('stock_history', JSON.stringify(history));
+        async function recordStockTransaction(transaction) {
+            try {
+                await StockHistoryAPI.create({
+                    type: transaction.type,
+                    date: transaction.date,
+                    brochure_id: transaction.brochureId,
+                    brochure_name: transaction.brochureName,
+                    quantity: transaction.quantity,
+                    contact_name: transaction.contactName || '',
+                    schoolname: transaction.schoolname || '',
+                    before_stock: transaction.beforeStock,
+                    after_stock: transaction.afterStock
+                });
+            } catch (error) {
+                console.error('입출고 내역 저장 오류:', error);
+            }
         }
 
         // 입출고 내역 엑셀 다운로드
-        function downloadStockHistory() {
-            const history = JSON.parse(localStorage.getItem('stock_history') || '[]');
-            
-            if (history.length === 0) {
-                showAlert('다운로드할 입출고 내역이 없습니다.', 'danger');
-                return;
-            }
+        async function downloadStockHistory() {
+            try {
+                const history = await StockHistoryAPI.getAll();
+                
+                if (history.length === 0) {
+                    showAlert('다운로드할 입출고 내역이 없습니다.', 'danger');
+                    return;
+                }
 
             // 엑셀 데이터 생성
             const excelData = [];
@@ -1088,20 +1101,20 @@
                 '처리 시간'
             ]);
 
-            // 데이터 행
-            history.forEach(item => {
-                excelData.push([
-                    item.type || '',
-                    item.date || '',
-                    item.brochureName || '',
-                    item.quantity || 0,
-                    item.contactName || '',
-                    item.schoolname || '',
-                    item.beforeStock || 0,
-                    item.afterStock || 0,
-                    item.timestamp ? new Date(item.timestamp).toLocaleString('ko-KR') : ''
-                ]);
-            });
+                // 데이터 행
+                history.forEach(item => {
+                    excelData.push([
+                        item.type || '',
+                        item.date || '',
+                        item.brochure_name || '',
+                        item.quantity || 0,
+                        item.contact_name || '',
+                        item.schoolname || '',
+                        item.before_stock || 0,
+                        item.after_stock || 0,
+                        item.created_at ? new Date(item.created_at).toLocaleString('ko-KR') : ''
+                    ]);
+                });
 
             // 워크북 생성
             const wb = XLSX.utils.book_new();
@@ -1144,9 +1157,12 @@
                           String(today.getDate()).padStart(2, '0');
             const fileName = `입출고내역_${dateStr}.xlsx`;
 
-            // 다운로드
-            XLSX.writeFile(wb, fileName);
-            showAlert('입출고 내역이 다운로드되었습니다.', 'success');
+                // 다운로드
+                XLSX.writeFile(wb, fileName);
+                showAlert('입출고 내역이 다운로드되었습니다.', 'success');
+            } catch (error) {
+                showAlert('입출고 내역 다운로드 중 오류가 발생했습니다: ' + error.message, 'danger');
+            }
         }
 
         // 로그아웃
@@ -1178,12 +1194,12 @@
         }
 
         // 페이지 로드 시
-        window.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', async function() {
             if (!checkLogin()) return;
             
-            initializeData();
-            loadBrochures();
-            loadContacts();
+            await initializeData();
+            await loadBrochures();
+            await loadContacts();
         });
     </script>
 </body>

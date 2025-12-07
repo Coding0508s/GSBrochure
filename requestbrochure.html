@@ -441,106 +441,110 @@
         </form>
     </div>
 
+    <script src="js/api.js"></script>
     <script>
         let rowCount = 0;
 
-        // 브로셔 옵션 목록 로드 (로컬 스토리지에서)
-        function loadBrochureOptions() {
-            const brochures = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-            return brochures.map(b => ({
-                value: b.id,
-                text: b.name
-            }));
+        // 브로셔 옵션 목록 로드 (API에서)
+        async function loadBrochureOptions() {
+            try {
+                const brochures = await BrochureAPI.getAll();
+                return brochures.map(b => ({
+                    value: b.id,
+                    text: b.name
+                }));
+            } catch (error) {
+                console.error('브로셔 옵션 로드 오류:', error);
+                return [];
+            }
         }
 
-        // 담당자 옵션 목록 로드 (로컬 스토리지에서)
-        function loadContactOptions() {
-            const contacts = JSON.parse(localStorage.getItem('contacts_master') || '[]');
-            return contacts.map(c => ({
-                value: c.id,
-                text: c.name
-            }));
+        // 담당자 옵션 목록 로드 (API에서)
+        async function loadContactOptions() {
+            try {
+                const contacts = await ContactAPI.getAll();
+                return contacts.map(c => ({
+                    value: c.id,
+                    text: c.name
+                }));
+            } catch (error) {
+                console.error('담당자 옵션 로드 오류:', error);
+                return [];
+            }
         }
 
         // 브로셔 재고 차감 함수
-        function deductBrochureStock(brochures, contactName, schoolname, date) {
-            let brochureMaster = JSON.parse(localStorage.getItem('brochure_master') || '[]');
-            const insufficientStock = [];
-            const stockChanges = []; // 재고 변경 내역 저장
+        async function deductBrochureStock(brochures, contactName, schoolname, date) {
+            try {
+                const brochureMaster = await BrochureAPI.getAll();
+                const insufficientStock = [];
+                const stockChanges = []; // 재고 변경 내역 저장
 
-            // 재고 확인
-            for (const brochure of brochures) {
-                const masterItem = brochureMaster.find(b => b.id === brochure.brochure);
-                if (masterItem) {
-                    const currentStock = masterItem.stock || 0;
-                    const requestedQuantity = brochure.quantity || 0;
-                    
-                    if (currentStock < requestedQuantity) {
-                        insufficientStock.push({
-                            name: brochure.brochureName,
-                            requested: requestedQuantity,
-                            available: currentStock
-                        });
-                    } else {
-                        // 재고 변경 내역 저장
-                        stockChanges.push({
-                            brochureId: brochure.brochure,
-                            brochureName: brochure.brochureName,
-                            quantity: requestedQuantity,
-                            beforeStock: currentStock,
-                            afterStock: currentStock - requestedQuantity
-                        });
+                // 재고 확인
+                for (const brochure of brochures) {
+                    const masterItem = brochureMaster.find(b => b.id == brochure.brochure);
+                    if (masterItem) {
+                        const currentStock = masterItem.stock || 0;
+                        const requestedQuantity = brochure.quantity || 0;
+                        
+                        if (currentStock < requestedQuantity) {
+                            insufficientStock.push({
+                                name: brochure.brochureName,
+                                requested: requestedQuantity,
+                                available: currentStock
+                            });
+                        } else {
+                            // 재고 변경 내역 저장
+                            stockChanges.push({
+                                brochureId: brochure.brochure,
+                                brochureName: brochure.brochureName,
+                                quantity: requestedQuantity,
+                                beforeStock: currentStock,
+                                afterStock: currentStock - requestedQuantity
+                            });
+                        }
                     }
                 }
-            }
 
-            // 재고 부족이 있으면 false 반환
-            if (insufficientStock.length > 0) {
-                return {
-                    success: false,
-                    insufficient: insufficientStock
-                };
-            }
+                // 재고 부족이 있으면 false 반환
+                if (insufficientStock.length > 0) {
+                    return {
+                        success: false,
+                        insufficient: insufficientStock
+                    };
+                }
 
-            // 재고 차감 및 출고 내역 저장
-            for (const change of stockChanges) {
-                const masterItem = brochureMaster.find(b => b.id === change.brochureId);
-                if (masterItem) {
-                    masterItem.stock = change.afterStock;
+                // 재고 차감 및 출고 내역 저장
+                for (const change of stockChanges) {
+                    // 재고 차감 (음수로 전달)
+                    await BrochureAPI.updateStock(change.brochureId, -change.quantity, date || new Date().toISOString().split('T')[0]);
                     
                     // 출고 내역 저장
-                    recordStockTransaction({
+                    await StockHistoryAPI.create({
                         type: '출고',
                         date: date || new Date().toISOString().split('T')[0],
-                        brochureId: change.brochureId,
-                        brochureName: change.brochureName,
+                        brochure_id: change.brochureId,
+                        brochure_name: change.brochureName,
                         quantity: change.quantity,
-                        contactName: contactName || '',
+                        contact_name: contactName || '',
                         schoolname: schoolname || '',
-                        beforeStock: change.beforeStock,
-                        afterStock: change.afterStock
+                        before_stock: change.beforeStock,
+                        after_stock: change.afterStock
                     });
                 }
+
+                return { success: true };
+            } catch (error) {
+                console.error('재고 차감 오류:', error);
+                return {
+                    success: false,
+                    error: error.message
+                };
             }
-
-            localStorage.setItem('brochure_master', JSON.stringify(brochureMaster));
-            return { success: true };
-        }
-
-        // 입출고 내역 저장 함수
-        function recordStockTransaction(transaction) {
-            let history = JSON.parse(localStorage.getItem('stock_history') || '[]');
-            history.push({
-                ...transaction,
-                timestamp: new Date().toISOString()
-            });
-            // 최신순으로 정렬
-            history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            localStorage.setItem('stock_history', JSON.stringify(history));
         }
 
         // 행 추가 함수
-        function addRow() {
+        async function addRow() {
             rowCount++;
             const rowsContainer = document.getElementById('rowsContainer');
             
@@ -548,8 +552,8 @@
             rowDiv.className = 'row-container';
             rowDiv.id = `row-${rowCount}`;
             
-            // 브로셔 선택 옵션 생성 (로컬 스토리지에서 로드)
-            const brochureOptions = loadBrochureOptions();
+            // 브로셔 선택 옵션 생성 (API에서 로드)
+            const brochureOptions = await loadBrochureOptions();
             let brochureOptionsHtml = '<option value="">선택하세요</option>';
             brochureOptions.forEach(option => {
                 brochureOptionsHtml += `<option value="${option.value}">${option.text}</option>`;
@@ -603,7 +607,7 @@
             
             rowsContainer.appendChild(rowDiv);
             // 기본 브로셔 항목 하나 추가
-            addBrochureItem(rowCount, true);
+            addBrochureItem(rowCount, true).catch(err => console.error('브로셔 항목 추가 오류:', err));
             // 송장번호 필드는 비활성화 (logistics 페이지에서만 추가 가능)
             addInvoiceField(rowCount, []);
             updateRowNumbers();
@@ -624,41 +628,46 @@
         }
 
         // 브로셔 항목 추가 함수
-        function addBrochureItem(rowId, isDefault = false) {
+        async function addBrochureItem(rowId, isDefault = false) {
             const container = document.getElementById(`brochure-container-${rowId}`);
             if (!container) return;
 
             const brochureCount = container.querySelectorAll('.brochure-item').length;
             const itemId = `brochure-${rowId}-${brochureCount + 1}`;
             
-            // 브로셔 선택 옵션 생성 (로컬 스토리지에서 로드)
-            const brochureOptions = loadBrochureOptions();
-            let brochureOptionsHtml = '<option value="">선택하세요</option>';
-            brochureOptions.forEach(option => {
-                brochureOptionsHtml += `<option value="${option.value}">${option.text}</option>`;
-            });
+            try {
+                // 브로셔 선택 옵션 생성 (API에서 로드)
+                const brochureOptions = await loadBrochureOptions();
+                let brochureOptionsHtml = '<option value="">선택하세요</option>';
+                brochureOptions.forEach(option => {
+                    brochureOptionsHtml += `<option value="${option.value}">${option.text}</option>`;
+                });
 
-            const brochureItem = document.createElement('div');
-            brochureItem.className = 'brochure-item';
-            brochureItem.id = `brochure-item-${itemId}`;
-            
-            brochureItem.innerHTML = `
-                <div class="brochure-item-fields">
-                    <div class="form-group expand">
-                        <label for="${itemId}">브로셔</label>
-                        <select id="${itemId}" name="${itemId}" required>
-                            ${brochureOptionsHtml}
-                        </select>
+                const brochureItem = document.createElement('div');
+                brochureItem.className = 'brochure-item';
+                brochureItem.id = `brochure-item-${itemId}`;
+                
+                brochureItem.innerHTML = `
+                    <div class="brochure-item-fields">
+                        <div class="form-group expand">
+                            <label for="${itemId}">브로셔</label>
+                            <select id="${itemId}" name="${itemId}" required>
+                                ${brochureOptionsHtml}
+                            </select>
+                        </div>
+                        <div class="form-group narrow">
+                            <label for="quantity-${itemId}">수량</label>
+                            <input type="number" id="quantity-${itemId}" name="quantity-${itemId}" min="1" placeholder="수량을 입력하세요" required>
+                        </div>
+                        ${!isDefault ? `<button type="button" class="btn btn-danger btn-small" onclick="removeBrochureItem('${itemId}')" style="align-self: flex-end; margin-bottom: 0;">삭제</button>` : ''}
                     </div>
-                    <div class="form-group narrow">
-                        <label for="quantity-${itemId}">수량</label>
-                        <input type="number" id="quantity-${itemId}" name="quantity-${itemId}" min="1" placeholder="수량을 입력하세요" required>
-                    </div>
-                    ${!isDefault ? `<button type="button" class="btn btn-danger btn-small" onclick="removeBrochureItem('${itemId}')" style="align-self: flex-end; margin-bottom: 0;">삭제</button>` : ''}
-                </div>
-            `;
-            
-            container.appendChild(brochureItem);
+                `;
+                
+                container.appendChild(brochureItem);
+            } catch (error) {
+                console.error('브로셔 항목 추가 오류:', error);
+                showAlert('브로셔 옵션을 불러오는 중 오류가 발생했습니다.', 'danger');
+            }
         }
 
         // 브로셔 항목 삭제 함수
@@ -805,7 +814,7 @@
         }
 
         // 개별 건 저장 함수
-        function saveSingleRequest(rowId) {
+        async function saveSingleRequest(rowId) {
             // 상단의 담당자 선택 값 가져오기
             const contactSelect = document.getElementById('option-1');
             const contact = contactSelect.value;
@@ -821,55 +830,58 @@
             const schoolname = document.getElementById(`schoolname-${rowId}`)?.value;
             const address = document.getElementById(`address-${rowId}`)?.value;
             const phone = document.getElementById(`phone-${rowId}`)?.value;
-                const brochures = collectBrochureItems(rowId);
-                const invoices = collectInvoiceFields(rowId);
+            const brochures = collectBrochureItems(rowId);
+            const invoices = collectInvoiceFields(rowId);
                 
-                // 필수 필드 검증
+            // 필수 필드 검증
             if (!date || !schoolname || !address || !phone || brochures.length === 0) {
                 showAlert('모든 필수 항목을 입력해주세요.', 'danger');
                 return;
             }
 
-            // 재고 확인 및 차감
-            const stockResult = deductBrochureStock(brochures, contactName, schoolname, date);
-            if (!stockResult.success) {
-                let message = '재고가 부족합니다:\n';
-                stockResult.insufficient.forEach(item => {
-                    message += `- ${item.name}: 요청 ${item.requested}권, 보유 ${item.available}권\n`;
-                });
-                alert(message);
-                return;
-            }
+            try {
+                // 재고 확인 및 차감
+                const stockResult = await deductBrochureStock(brochures, contactName, schoolname, date);
+                if (!stockResult.success) {
+                    if (stockResult.insufficient) {
+                        let message = '재고가 부족합니다:\n';
+                        stockResult.insufficient.forEach(item => {
+                            message += `- ${item.name}: 요청 ${item.requested}권, 보유 ${item.available}권\n`;
+                        });
+                        alert(message);
+                    } else {
+                        showAlert('재고 확인 중 오류가 발생했습니다: ' + (stockResult.error || '알 수 없는 오류'), 'danger');
+                    }
+                    return;
+                }
 
-            // 데이터 저장 (로컬 스토리지 사용)
-            const requestData = {
-                date: date,
-                schoolname: schoolname,
-                address: address,
-                phone: phone,
-                contact: contact,
-                contactName: contactName,
-                brochures: brochures,
-                invoices: invoices
-            };
+                // 데이터 저장 (API 사용)
+                const requestData = {
+                    date: date,
+                    schoolname: schoolname,
+                    address: address,
+                    phone: phone,
+                    contact_id: contact,
+                    contact_name: contactName,
+                    brochures: brochures.map(b => ({
+                        brochure: b.brochure,
+                        brochureName: b.brochureName,
+                        quantity: b.quantity
+                    })),
+                    invoices: invoices.filter(inv => inv && inv.trim())
+                };
 
-            // 기존 신청 내역 가져오기
-            let allRequests = JSON.parse(localStorage.getItem('brochure_requests') || '[]');
-            
-            // 새로운 그룹 생성 또는 기존 그룹에 추가
-            const newGroup = {
-                requests: [requestData],
-                submittedAt: new Date().toISOString()
-            };
-            allRequests.push(newGroup);
-            localStorage.setItem('brochure_requests', JSON.stringify(allRequests));
+                await RequestAPI.create(requestData);
 
-            showAlert('브로셔 신청이 완료되었습니다!', 'success');
-            
-            // 해당 행 제거
-            const row = document.getElementById(`row-${rowId}`);
-            if (row) {
-                row.remove();
+                showAlert('브로셔 신청이 완료되었습니다!', 'success');
+                
+                // 해당 행 제거
+                const row = document.getElementById(`row-${rowId}`);
+                if (row) {
+                    row.remove();
+                }
+            } catch (error) {
+                showAlert('신청 저장 중 오류가 발생했습니다: ' + error.message, 'danger');
             }
         }
 
@@ -880,24 +892,28 @@
         });
 
         // 담당자 옵션 로드 및 표시
-        function loadContactOptionsToSelect() {
+        async function loadContactOptionsToSelect() {
             const contactSelect = document.getElementById('option-1');
             if (!contactSelect) return;
 
-            const contacts = loadContactOptions();
-            contactSelect.innerHTML = '<option value="">선택하세요</option>';
-            contacts.forEach(contact => {
-                const option = document.createElement('option');
-                option.value = contact.value;
-                option.textContent = contact.text;
-                contactSelect.appendChild(option);
-            });
+            try {
+                const contacts = await loadContactOptions();
+                contactSelect.innerHTML = '<option value="">선택하세요</option>';
+                contacts.forEach(contact => {
+                    const option = document.createElement('option');
+                    option.value = contact.value;
+                    option.textContent = contact.text;
+                    contactSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('담당자 옵션 로드 오류:', error);
+            }
         }
 
         // 페이지 로드 시 기본 행 하나 추가 및 옵션 로드
-        window.addEventListener('DOMContentLoaded', function() {
-            loadContactOptionsToSelect();
-            addRow();
+        window.addEventListener('DOMContentLoaded', async function() {
+            await loadContactOptionsToSelect();
+            await addRow();
         });
     </script>
 </body>

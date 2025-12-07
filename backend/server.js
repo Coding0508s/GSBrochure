@@ -11,7 +11,12 @@ const PORT = process.env.PORT || 3000;
 // 미들웨어
 // CORS 설정 - 프로덕션 환경에서 특정 도메인만 허용하도록 설정 가능
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN || '*', // 프로덕션에서는 특정 도메인으로 변경
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [
+        'https://coding0508s.github.io',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        '*' // 개발 환경용
+    ],
     credentials: true
 };
 app.use(cors(corsOptions));

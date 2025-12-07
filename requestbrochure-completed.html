@@ -452,6 +452,7 @@
         </div>
     </div>
 
+    <script src="js/api.js"></script>
     <script>
         let allRequests = [];
         let filteredRequests = [];
@@ -459,29 +460,44 @@
         const itemsPerPage = 10;
 
         // 저장된 신청 내역 로드 (운송장이 입력된 것만)
-        function loadRequests() {
-            const stored = localStorage.getItem('brochure_requests');
-            const allData = stored ? JSON.parse(stored) : [];
-            
-            // 운송장이 입력된 신청만 필터링 (빈 배열이나 빈 문자열만 있는 경우 제외)
-            allRequests = allData.map(requestGroup => {
-                const completed = requestGroup.requests.filter(request => {
-                    if (!request.invoices || request.invoices.length === 0) {
+        async function loadRequests() {
+            try {
+                const requests = await RequestAPI.getAll();
+                
+                // 운송장이 입력된 신청만 필터링 (빈 배열이나 빈 문자열만 있는 경우 제외)
+                const completed = requests.filter(req => {
+                    if (!req.invoices || req.invoices.length === 0) {
                         return false;
                     }
                     // 실제로 값이 있는 운송장 번호가 있는지 확인
-                    return request.invoices.some(inv => inv && inv.trim() !== '');
+                    return req.invoices.some(inv => inv && inv.trim() !== '');
                 });
-                return {
-                    ...requestGroup,
-                    requests: completed
-                };
-            }).filter(group => group.requests.length > 0);
+                
+                // API 응답을 기존 형식으로 변환
+                allRequests = completed.map(req => ({
+                    id: req.id,
+                    requests: [{
+                        id: req.id,
+                        date: req.date,
+                        schoolname: req.schoolname,
+                        address: req.address,
+                        phone: req.phone,
+                        contact: req.contact_id,
+                        contactName: req.contact_name,
+                        brochures: req.items || [],
+                        invoices: req.invoices || []
+                    }],
+                    submittedAt: req.submitted_at
+                }));
             
-            filteredRequests = [...allRequests];
-            currentPage = 1;
-            displayRequests();
-            updateStats();
+                filteredRequests = [...allRequests];
+                currentPage = 1;
+                displayRequests();
+                updateStats();
+            } catch (error) {
+                console.error('신청 내역 로드 오류:', error);
+                showAlert('신청 내역을 불러오는 중 오류가 발생했습니다.', 'danger');
+            }
         }
 
         // 모든 신청을 평면 배열로 변환
@@ -778,16 +794,32 @@
                 }
             }
             
-            if (found) {
-                // 로컬 스토리지에 저장
-                localStorage.setItem('brochure_requests', JSON.stringify(allData));
+            try {
+                // 필터링된 배열에서 해당 요청 찾기
+                const targetRequest = filteredRequests[groupIndex]?.requests[requestIndex];
+                if (!targetRequest) {
+                    alert('신청 내역을 찾을 수 없습니다.');
+                    return;
+                }
+
+                // 요청 ID 가져오기
+                const requestId = targetRequest.id || allRequests[groupIndex]?.id || allRequests[groupIndex]?.requests?.[requestIndex]?.id;
+                
+                if (!requestId) {
+                    alert('요청 ID를 찾을 수 없습니다.');
+                    return;
+                }
+
+                // API를 통해 운송장 번호 삭제
+                await RequestAPI.deleteInvoices(requestId);
                 
                 alert('운송장 입력이 취소되었습니다. 해당 건은 다시 신청 내역 및 운송장 번호 입력 페이지에 표시됩니다.');
                 
                 // 페이지 새로고침하여 목록 업데이트
-                loadRequests();
-            } else {
-                alert('신청 내역을 찾을 수 없습니다.');
+                await loadRequests();
+            } catch (error) {
+                console.error('운송장 취소 오류:', error);
+                alert('운송장 취소 중 오류가 발생했습니다: ' + error.message);
             }
         }
 

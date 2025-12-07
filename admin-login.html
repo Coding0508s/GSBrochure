@@ -144,20 +144,8 @@
         <a href="requestbrochure.html" class="back-link">← 신청 페이지로 돌아가기</a>
     </div>
 
+    <script src="js/api.js"></script>
     <script>
-        // 초기 관리자 계정 설정 (최초 1회만)
-        function initializeAdminAccount() {
-            const adminAuth = localStorage.getItem('admin_auth');
-            if (!adminAuth) {
-                // 기본 관리자 계정 생성 (비밀번호: admin123)
-                const defaultAuth = {
-                    username: 'admin',
-                    password: 'admin123' // 실제 운영 시에는 해시 처리 권장
-                };
-                localStorage.setItem('admin_auth', JSON.stringify(defaultAuth));
-            }
-        }
-
         // 알림 표시 함수
         function showAlert(message, type = 'danger') {
             const alertDiv = document.getElementById('alert');
@@ -171,17 +159,18 @@
         }
 
         // 로그인 처리
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            const adminAuth = JSON.parse(localStorage.getItem('admin_auth') || '{}');
-            
-            if (adminAuth.username === username && adminAuth.password === password) {
-                // 로그인 성공 - 세션 저장
-                sessionStorage.setItem('admin_logged_in', 'true');
+            try {
+                const result = await AdminAPI.login(username, password);
+                
+                if (result.success) {
+                    // 로그인 성공 - 세션 저장
+                    sessionStorage.setItem('admin_logged_in', 'true');
                 sessionStorage.setItem('admin_username', username);
                 
                 // 관리자 페이지로 이동
@@ -191,10 +180,6 @@
             }
         });
 
-        // 페이지 로드 시 초기 계정 설정
-        window.addEventListener('DOMContentLoaded', function() {
-            initializeAdminAccount();
-        });
     </script>
 </body>
 </html>
