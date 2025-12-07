@@ -30,23 +30,127 @@ app.use(express.static(path.join(__dirname, '..')));
 
 // 루트 경로 라우팅
 app.get('/', (req, res) => {
-    const mainPage = path.join(__dirname, '..', 'brochuremain.html');
-    if (fs.existsSync(mainPage)) {
-        res.sendFile(mainPage);
-    } else {
-        res.status(200).json({
-            message: 'GS Brochure Management API Server',
-            version: '1.0.0',
-            endpoints: {
-                brochures: '/api/brochures',
-                contacts: '/api/contacts',
-                requests: '/api/requests',
-                stockHistory: '/api/stock-history',
-                admin: '/api/admin/login'
-            },
-            frontend: 'https://coding0508s.github.io/GSBrochure/'
-        });
-    }
+    // Railway 배포 환경에서는 HTML 페이지를 직접 제공
+    const html = `
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GS Brochure Management API Server</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: '맑은 고딕', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            max-width: 600px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            color: #440b86;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .info {
+            margin-bottom: 30px;
+        }
+        .info p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .endpoints {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .endpoints h2 {
+            color: #440b86;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .endpoint {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .endpoint:last-child {
+            border-bottom: none;
+        }
+        .endpoint strong {
+            color: #440b86;
+            display: inline-block;
+            min-width: 150px;
+        }
+        .frontend-link {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #440b86;
+        }
+        .frontend-link a {
+            display: inline-block;
+            background: #440b86;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .frontend-link a:hover {
+            background: #0ca22c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GS Brochure Management API Server</h1>
+        <div class="info">
+            <p><strong>버전:</strong> 1.0.0</p>
+            <p>이 서버는 GS Brochure Management System의 백엔드 API 서버입니다.</p>
+        </div>
+        <div class="endpoints">
+            <h2>사용 가능한 API 엔드포인트</h2>
+            <div class="endpoint">
+                <strong>브로셔:</strong> <code>/api/brochures</code>
+            </div>
+            <div class="endpoint">
+                <strong>담당자:</strong> <code>/api/contacts</code>
+            </div>
+            <div class="endpoint">
+                <strong>신청 내역:</strong> <code>/api/requests</code>
+            </div>
+            <div class="endpoint">
+                <strong>입출고 내역:</strong> <code>/api/stock-history</code>
+            </div>
+            <div class="endpoint">
+                <strong>관리자 로그인:</strong> <code>/api/admin/login</code>
+            </div>
+        </div>
+        <div class="frontend-link">
+            <p style="margin-bottom: 15px; color: #666;">실제 애플리케이션을 사용하시려면:</p>
+            <a href="https://coding0508s.github.io/GSBrochure/" target="_blank">프론트엔드 애플리케이션 열기</a>
+        </div>
+    </div>
+</body>
+</html>
+    `;
+    res.send(html);
 });
 
 // ==================== 브로셔 관리 API ====================
