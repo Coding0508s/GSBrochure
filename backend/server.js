@@ -452,20 +452,53 @@ function startServer() {
     });
 }
 
-// 데이터베이스 파일이 없으면 자동 초기화
-if (!fs.existsSync(dbPath)) {
-    console.log('데이터베이스 파일이 없습니다. 초기화를 시작합니다...');
-    initDatabase()
-        .then(() => {
+// 데이터베이스 초기화 확인 및 실행
+async function ensureDatabaseInitialized() {
+    try {
+        // 데이터베이스 파일이 없으면 초기화
+        if (!fs.existsSync(dbPath)) {
+            console.log('데이터베이스 파일이 없습니다. 초기화를 시작합니다...');
+            await initDatabase();
             console.log('데이터베이스 자동 초기화 완료');
-            startServer();
-        })
-        .catch((err) => {
-            console.error('데이터베이스 초기화 오류:', err);
-            // 초기화 실패해도 서버는 시작 (기존 데이터베이스가 있을 수 있음)
-            startServer();
-        });
-} else {
-    startServer();
+            return;
+        }
+
+        // 데이터베이스 파일이 있으면 테이블 존재 여부 확인
+        const { allQuery } = require('./database/db');
+        try {
+            // brochures 테이블이 있는지 확인
+            await allQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='brochures'");
+            const tables = await allQuery("SELECT name FROM sqlite_master WHERE type='table'");
+            
+            // 필수 테이블이 없으면 초기화
+            const requiredTables = ['brochures', 'contacts', 'requests', 'request_items', 'invoices', 'stock_history', 'admin_users'];
+            const existingTables = tables.map(t => t.name);
+            const missingTables = requiredTables.filter(t => !existingTables.includes(t));
+            
+            if (missingTables.length > 0) {
+                console.log(`필수 테이블이 없습니다: ${missingTables.join(', ')}. 초기화를 시작합니다...`);
+                await initDatabase();
+                console.log('데이터베이스 자동 초기화 완료');
+            }
+        } catch (err) {
+            // 테이블 확인 중 오류 발생 시 초기화 시도
+            console.log('데이터베이스 테이블 확인 중 오류 발생. 초기화를 시작합니다...');
+            await initDatabase();
+            console.log('데이터베이스 자동 초기화 완료');
+        }
+    } catch (err) {
+        console.error('데이터베이스 초기화 오류:', err);
+        // 초기화 실패해도 서버는 시작
+    }
 }
+
+// 데이터베이스 초기화 확인 후 서버 시작
+ensureDatabaseInitialized()
+    .then(() => {
+        startServer();
+    })
+    .catch((err) => {
+        console.error('데이터베이스 초기화 확인 중 오류:', err);
+        startServer();
+    });
 
