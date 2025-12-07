@@ -1031,15 +1031,28 @@
             e.preventDefault();
             
             const id = document.getElementById('stockEditBrochureId').value;
-            const quantity = parseInt(document.getElementById('stockEditQuantity').value) || 0;
+            const newQuantity = parseInt(document.getElementById('stockEditQuantity').value) || 0;
 
-            if (quantity < 0) {
+            if (newQuantity < 0) {
                 showAlert('재고 수량은 0 이상이어야 합니다.', 'danger');
                 return;
             }
 
             try {
-                await BrochureAPI.update(id, { stock: quantity });
+                // 현재 브로셔 정보 가져오기
+                const brochures = await BrochureAPI.getAll();
+                const brochure = brochures.find(b => b.id == id);
+                
+                if (!brochure) {
+                    showAlert('브로셔를 찾을 수 없습니다.', 'danger');
+                    return;
+                }
+
+                // 현재 재고와 새 재고의 차이 계산
+                const quantityDifference = newQuantity - brochure.stock;
+                
+                // 재고 차이를 사용하여 업데이트 (입고/출고 방식)
+                await BrochureAPI.updateStock(id, quantityDifference, new Date().toISOString().split('T')[0]);
                 await loadBrochures();
                 showAlert('재고가 수정되었습니다.');
                 closeStockEditModal();
