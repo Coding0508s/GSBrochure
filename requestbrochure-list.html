@@ -1054,9 +1054,20 @@
                 }
             });
 
-            document.getElementById('totalRequests').textContent = totalRequests;
-            document.getElementById('totalBrochures').textContent = totalBrochures;
-            document.getElementById('withInvoice').textContent = withInvoice;
+            // 요소가 존재하는지 확인한 후에만 업데이트
+            const totalRequestsEl = document.getElementById('totalRequests');
+            const totalBrochuresEl = document.getElementById('totalBrochures');
+            const withInvoiceEl = document.getElementById('withInvoice');
+
+            if (totalRequestsEl) {
+                totalRequestsEl.textContent = totalRequests;
+            }
+            if (totalBrochuresEl) {
+                totalBrochuresEl.textContent = totalBrochures;
+            }
+            if (withInvoiceEl) {
+                withInvoiceEl.textContent = withInvoice;
+            }
         }
 
         // 알림 표시 함수
