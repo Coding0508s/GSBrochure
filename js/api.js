@@ -3,11 +3,8 @@
 const API_BASE_URL = (() => {
     // 프로덕션 환경 (GitHub Pages 등)
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        // 같은 도메인에서 서빙되는 경우 (백엔드가 정적 파일도 서빙)
-        // 또는 별도의 백엔드 서버 URL을 설정
-        // 예: 'https://your-backend-server.com/api'
-        // 같은 도메인인 경우 상대 경로 사용
-        return window.location.origin + '/api';
+        // Railway 백엔드 서버 URL
+        return 'https://pleasant-upliftment-production.up.railway.app/api';
     }
     // 개발 환경
     return 'http://localhost:3000/api';
