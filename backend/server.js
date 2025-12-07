@@ -28,6 +28,27 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // 정적 파일 제공 (프론트엔드 파일) - 상위 디렉토리의 파일들
 app.use(express.static(path.join(__dirname, '..')));
 
+// 루트 경로 라우팅
+app.get('/', (req, res) => {
+    const mainPage = path.join(__dirname, '..', 'brochuremain.html');
+    if (fs.existsSync(mainPage)) {
+        res.sendFile(mainPage);
+    } else {
+        res.status(200).json({
+            message: 'GS Brochure Management API Server',
+            version: '1.0.0',
+            endpoints: {
+                brochures: '/api/brochures',
+                contacts: '/api/contacts',
+                requests: '/api/requests',
+                stockHistory: '/api/stock-history',
+                admin: '/api/admin/login'
+            },
+            frontend: 'https://coding0508s.github.io/GSBrochure/'
+        });
+    }
+});
+
 // ==================== 브로셔 관리 API ====================
 
 // 모든 브로셔 조회
