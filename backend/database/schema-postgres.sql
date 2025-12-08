@@ -87,3 +87,4 @@ CREATE INDEX IF NOT EXISTS idx_invoices_request_id ON invoices(request_id);
 CREATE INDEX IF NOT EXISTS idx_stock_history_date ON stock_history(date);
 CREATE INDEX IF NOT EXISTS idx_stock_history_brochure_id ON stock_history(brochure_id);
 
+
