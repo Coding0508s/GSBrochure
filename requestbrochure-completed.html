@@ -459,6 +459,12 @@
         let currentPage = 1;
         const itemsPerPage = 10;
 
+        // 알림 표시 함수
+        function showAlert(message, type = 'success') {
+            // 간단한 alert로 대체
+            alert(message);
+        }
+
         // 저장된 신청 내역 로드 (운송장이 입력된 것만)
         async function loadRequests() {
             try {
@@ -757,48 +763,11 @@
         }
 
         // 운송장 입력 취소 함수
-        function cancelInvoice(groupIndex, requestIndex) {
+        async function cancelInvoice(groupIndex, requestIndex) {
             if (!confirm('운송장 입력을 취소하시겠습니까? 취소된 건은 다시 신청 내역 및 운송장 번호 입력 페이지에 표시됩니다.')) {
                 return;
             }
 
-            // 필터링된 배열에서 해당 요청 찾기
-            const targetRequest = filteredRequests[groupIndex]?.requests[requestIndex];
-            if (!targetRequest) {
-                alert('신청 내역을 찾을 수 없습니다.');
-                return;
-            }
-
-            // 로컬 스토리지에서 모든 신청 내역 가져오기
-            const stored = localStorage.getItem('brochure_requests');
-            if (!stored) {
-                alert('신청 내역을 찾을 수 없습니다.');
-                return;
-            }
-
-            const allData = JSON.parse(stored);
-            
-            // 원본 데이터에서 해당 요청 찾기 (날짜, 기관명, 주소, 전화번호로 매칭)
-            let found = false;
-            for (let i = 0; i < allData.length; i++) {
-                const requestGroup = allData[i];
-                if (requestGroup.requests) {
-                    for (let j = 0; j < requestGroup.requests.length; j++) {
-                        const request = requestGroup.requests[j];
-                        if (request.date === targetRequest.date &&
-                            request.schoolname === targetRequest.schoolname &&
-                            request.address === targetRequest.address &&
-                            request.phone === targetRequest.phone) {
-                            // 운송장 번호 제거
-                            request.invoices = [];
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found) break;
-                }
-            }
-            
             try {
                 // 필터링된 배열에서 해당 요청 찾기
                 const targetRequest = filteredRequests[groupIndex]?.requests[requestIndex];
