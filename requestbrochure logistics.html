@@ -686,7 +686,12 @@
                             phone: req.phone,
                             contact: req.contact_id,
                             contactName: req.contact_name,
-                            brochures: req.items || [],
+                            // API에서 받은 items를 기존 형식으로 변환 (brochure_name -> brochureName)
+                            brochures: (req.items || []).map(item => ({
+                                brochure: item.brochure_id,
+                                brochureName: item.brochure_name,
+                                quantity: item.quantity
+                            })),
                             invoices: req.invoices || []
                         };
                         allPendingRequests.push({
