@@ -57,5 +57,37 @@ npm start
 - Password: `admin123`
 
 ## 데이터베이스
-SQLite 데이터베이스 파일은 `database/brochure.db`에 저장됩니다.
+
+이 프로젝트는 **PostgreSQL**을 사용합니다. 로컬 SQLite는 사용하지 않습니다.
+
+### 환경 변수 설정
+
+**필수 환경 변수:**
+- `DATABASE_URL`: PostgreSQL 연결 문자열
+  - 형식: `postgresql://username:password@host:port/database`
+  - 예시: `postgresql://postgres:password@localhost:5432/brochure_db`
+
+### Railway 배포 시
+
+Railway에서 PostgreSQL 서비스를 추가하면 `DATABASE_URL` 환경 변수가 자동으로 설정됩니다.
+
+### 로컬 개발 환경
+
+로컬에서 개발하려면 PostgreSQL을 설치하고 `DATABASE_URL` 환경 변수를 설정하세요:
+
+```bash
+# .env 파일 생성 (선택사항)
+echo "DATABASE_URL=postgresql://postgres:password@localhost:5432/brochure_db" > .env
+
+# 또는 환경 변수로 직접 설정
+export DATABASE_URL=postgresql://postgres:password@localhost:5432/brochure_db
+```
+
+### 데이터베이스 초기화
+
+데이터베이스 초기화는 서버 시작 시 자동으로 실행됩니다. 수동으로 실행하려면:
+
+```bash
+npm run init-db
+```
 

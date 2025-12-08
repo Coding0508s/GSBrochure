@@ -4,9 +4,19 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 
 // PostgreSQL 연결 풀 생성
+// DATABASE_URL 환경 변수를 필수로 사용 (로컬 SQLite 대신)
+if (!process.env.DATABASE_URL) {
+    console.error('오류: DATABASE_URL 환경 변수가 설정되지 않았습니다.');
+    console.error('로컬 개발 환경에서는 PostgreSQL 연결 문자열을 설정하세요.');
+    console.error('예: DATABASE_URL=postgresql://user:password@localhost:5432/dbname');
+    process.exit(1);
+}
+
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL.includes('railway') || process.env.DATABASE_URL.includes('amazonaws')
+        ? { rejectUnauthorized: false }
+        : false
 });
 
 const schemaPath = path.join(__dirname, 'schema-postgres.sql');
