@@ -158,6 +158,35 @@ app.get('/', (req, res) => {
 
 // ==================== 브로셔 관리 API ====================
 
+// 데이터베이스 연결 상태 확인
+app.get('/api/health', async (req, res) => {
+    try {
+        const { pool } = require('./database/db');
+        const result = await pool.query('SELECT NOW() as current_time, version() as pg_version');
+        const tables = await pool.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public'
+            ORDER BY table_name
+        `);
+        
+        res.json({
+            status: 'ok',
+            database: {
+                connected: true,
+                current_time: result.rows[0].current_time,
+                version: result.rows[0].pg_version.split(' ')[0] + ' ' + result.rows[0].pg_version.split(' ')[1],
+                tables: tables.rows.map(t => t.table_name)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            error: error.message
+        });
+    }
+});
+
 // 모든 브로셔 조회
 app.get('/api/brochures', async (req, res) => {
     try {
@@ -176,12 +205,16 @@ app.post('/api/brochures', async (req, res) => {
             return res.status(400).json({ error: '브로셔명은 필수입니다.' });
         }
         
+        console.log(`[POST /api/brochures] 브로셔 추가 시도: ${name}, 재고: ${stock}`);
         const result = await runQuery(
             'INSERT INTO brochures (name, stock) VALUES ($1, $2) RETURNING id',
             [name, stock]
         );
+        console.log(`[POST /api/brochures] 브로셔 추가 성공: ID=${result.rows[0].id}`);
         res.json({ id: result.rows[0].id, name, stock });
     } catch (error) {
+        console.error('[POST /api/brochures] 오류:', error.message);
+        console.error('[POST /api/brochures] 스택:', error.stack);
         res.status(500).json({ error: error.message });
     }
 });
@@ -331,6 +364,7 @@ app.post('/api/requests', async (req, res) => {
             return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
         }
         
+        console.log(`[POST /api/requests] 신청 내역 추가 시도: ${schoolname}, 브로셔 수: ${brochures.length}`);
         const { pool } = require('./database/db');
         const client = await pool.connect();
         
@@ -344,6 +378,7 @@ app.post('/api/requests', async (req, res) => {
             );
             
             const requestId = requestResult.rows[0].id;
+            console.log(`[POST /api/requests] 신청 내역 생성: ID=${requestId}`);
             
             // 브로셔 항목 추가
             for (const brochure of brochures) {
@@ -352,6 +387,7 @@ app.post('/api/requests', async (req, res) => {
                     [requestId, brochure.brochure, brochure.brochureName, brochure.quantity]
                 );
             }
+            console.log(`[POST /api/requests] 브로셔 항목 ${brochures.length}개 추가 완료`);
             
             // 운송장 번호 추가
             if (invoices && invoices.length > 0) {
@@ -363,17 +399,23 @@ app.post('/api/requests', async (req, res) => {
                         );
                     }
                 }
+                console.log(`[POST /api/requests] 운송장 번호 ${invoices.length}개 추가 완료`);
             }
             
             await client.query('COMMIT');
+            console.log(`[POST /api/requests] 신청 내역 추가 성공: ID=${requestId}`);
             res.json({ id: requestId });
         } catch (err) {
             await client.query('ROLLBACK');
+            console.error('[POST /api/requests] 트랜잭션 오류:', err.message);
+            console.error('[POST /api/requests] 스택:', err.stack);
             throw err;
         } finally {
             client.release();
         }
     } catch (error) {
+        console.error('[POST /api/requests] 오류:', error.message);
+        console.error('[POST /api/requests] 스택:', error.stack);
         res.status(500).json({ error: error.message });
     }
 });
@@ -432,6 +474,7 @@ app.post('/api/requests/:id/invoices', async (req, res) => {
             return res.status(400).json({ error: '운송장 번호 배열이 필요합니다.' });
         }
         
+        console.log(`[POST /api/requests/${id}/invoices] 운송장 번호 추가 시도: ${invoices.length}개`);
         const { pool } = require('./database/db');
         const client = await pool.connect();
         
@@ -442,13 +485,17 @@ app.post('/api/requests/:id/invoices', async (req, res) => {
                         'INSERT INTO invoices (request_id, invoice_number) VALUES ($1, $2)',
                         [id, invoice.trim()]
                     );
+                    console.log(`[POST /api/requests/${id}/invoices] 운송장 번호 추가: ${invoice.trim()}`);
                 }
             }
+            console.log(`[POST /api/requests/${id}/invoices] 운송장 번호 추가 성공`);
             res.json({ success: true });
         } finally {
             client.release();
         }
     } catch (error) {
+        console.error(`[POST /api/requests/${req.params.id}/invoices] 오류:`, error.message);
+        console.error(`[POST /api/requests/${req.params.id}/invoices] 스택:`, error.stack);
         res.status(500).json({ error: error.message });
     }
 });
