@@ -503,20 +503,26 @@
             `;
             
                 rowsContainer.appendChild(rowDiv);
+                
+                // DOM이 완전히 렌더링될 때까지 대기 후 송장번호 필드 추가
+                await new Promise(resolve => setTimeout(resolve, 0));
+                
             } catch (error) {
                 console.error('행 추가 오류:', error);
             }
+            
             // 저장된 송장번호가 있으면 표시, 없으면 기본 필드 하나 추가
+            const currentRowCount = rowCount; // 클로저로 현재 rowCount 값 보존
             if (request.invoices && request.invoices.length > 0) {
                 request.invoices.forEach((invoice, index) => {
-                    addInvoiceField(rowCount, index === 0);
-                    const input = document.querySelector(`#invoice-container-${rowCount} input[type="text"]:last-of-type`);
+                    addInvoiceField(currentRowCount, index === 0);
+                    const input = document.querySelector(`#invoice-container-${currentRowCount} input[type="text"]:last-of-type`);
                     if (input) {
                         input.value = invoice;
                     }
                 });
             } else {
-                addInvoiceField(rowCount, true);
+                addInvoiceField(currentRowCount, true);
             }
         }
 
@@ -718,7 +724,7 @@
         }
 
         // 페이지네이션 적용된 신청 내역 표시
-        function displayPagedRequests() {
+        async function displayPagedRequests() {
             const rowsContainer = document.getElementById('rowsContainer');
             rowsContainer.innerHTML = '';
 
@@ -728,10 +734,10 @@
             const endIndex = startIndex + itemsPerPage;
             const pageItems = allPendingRequests.slice(startIndex, endIndex);
 
-            // 현재 페이지의 항목만 표시
-            pageItems.forEach(async item => {
+            // 현재 페이지의 항목만 순차적으로 표시 (forEach 대신 for...of 사용)
+            for (const item of pageItems) {
                 await addRowFromData(item.request, item.requestIndex || 0, item.itemIndex || 0, item.requestId);
-            });
+            }
 
             // 페이지네이션 UI 업데이트
             updatePagination(totalPages, totalItems);
@@ -803,11 +809,11 @@
         }
 
         // 페이지 이동
-        function goToPage(page) {
+        async function goToPage(page) {
             const totalPages = Math.ceil(allPendingRequests.length / itemsPerPage);
             if (page < 1 || page > totalPages) return;
             currentPage = page;
-            displayPagedRequests();
+            await displayPagedRequests();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
