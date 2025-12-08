@@ -730,10 +730,14 @@ async function ensureDatabaseInitialized() {
 // 데이터베이스 초기화 확인 후 서버 시작
 ensureDatabaseInitialized()
     .then(() => {
+        console.log('데이터베이스 초기화 확인 완료. 서버를 시작합니다...');
         startServer();
     })
     .catch((err) => {
         console.error('데이터베이스 초기화 확인 중 오류:', err);
+        console.error('오류 상세:', err.message);
+        console.error('스택:', err.stack);
+        console.log('오류가 발생했지만 서버는 시작합니다. 데이터베이스 연결을 확인하세요.');
         startServer();
     });
 

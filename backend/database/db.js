@@ -6,7 +6,11 @@ if (!process.env.DATABASE_URL) {
     console.error('오류: DATABASE_URL 환경 변수가 설정되지 않았습니다.');
     console.error('로컬 개발 환경에서는 PostgreSQL 연결 문자열을 설정하세요.');
     console.error('예: DATABASE_URL=postgresql://user:password@localhost:5432/dbname');
-    process.exit(1);
+    // Railway 배포 환경에서는 서버가 시작되지 않도록 종료
+    // 하지만 로그를 남기기 위해 약간의 지연 후 종료
+    setTimeout(() => {
+        process.exit(1);
+    }, 1000);
 }
 
 const pool = new Pool({
