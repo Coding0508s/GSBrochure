@@ -3,12 +3,13 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
-const { runQuery, getQuery, allQuery } = require('./database/db');
+const { runQuery, getQuery, allQuery, pool } = require('./database/db');
 const bcrypt = require('bcrypt');
 const { initDatabase } = require('./database/init-db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+let server = null;
 
 // 미들웨어
 // CORS 설정 - 프로덕션 환경에서 특정 도메인만 허용하도록 설정 가능
@@ -680,7 +681,7 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 
 // 서버 시작 함수
 function startServer() {
-    app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
         console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
         console.log(`API 엔드포인트: http://localhost:${PORT}/api`);
         console.log(`환경: ${process.env.NODE_ENV || 'development'}`);
@@ -689,6 +690,50 @@ function startServer() {
         }
     });
 }
+
+// Graceful shutdown 처리
+async function gracefulShutdown(signal) {
+    console.log(`${signal} 신호를 받았습니다. 서버를 정상적으로 종료합니다...`);
+    
+    if (server) {
+        server.close(() => {
+            console.log('HTTP 서버가 종료되었습니다.');
+            
+            // 데이터베이스 연결 풀 종료
+            pool.end(() => {
+                console.log('데이터베이스 연결 풀이 종료되었습니다.');
+                process.exit(0);
+            });
+        });
+        
+        // 강제 종료 타임아웃 (10초)
+        setTimeout(() => {
+            console.error('강제 종료: 타임아웃 초과');
+            process.exit(1);
+        }, 10000);
+    } else {
+        // 서버가 시작되지 않은 경우
+        pool.end(() => {
+            console.log('데이터베이스 연결 풀이 종료되었습니다.');
+            process.exit(0);
+        });
+    }
+}
+
+// 종료 신호 처리
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// 처리되지 않은 예외 처리
+process.on('uncaughtException', (err) => {
+    console.error('처리되지 않은 예외:', err);
+    gracefulShutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('처리되지 않은 Promise 거부:', reason);
+    gracefulShutdown('unhandledRejection');
+});
 
 // 데이터베이스 초기화 확인 및 실행
 async function ensureDatabaseInitialized() {
