@@ -27,8 +27,28 @@ async function apiCall(endpoint, method = 'GET', data = null) {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
         
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || `HTTP error! status: ${response.status}`);
+            // 응답 본문을 안전하게 파싱
+            let errorMessage = `HTTP error! status: ${response.status}`;
+            try {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const error = await response.json();
+                    errorMessage = error.error || errorMessage;
+                } else {
+                    const text = await response.text();
+                    errorMessage = text || errorMessage;
+                }
+            } catch (parseError) {
+                // JSON 파싱 실패 시 기본 메시지 사용
+                console.warn('응답 파싱 오류:', parseError);
+            }
+            
+            // 401 에러의 경우 사용자 친화적 메시지
+            if (response.status === 401) {
+                errorMessage = '인증 실패: 아이디 또는 비밀번호가 올바르지 않습니다.';
+            }
+            
+            throw new Error(errorMessage);
         }
 
         const result = await response.json();
