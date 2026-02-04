@@ -1,3 +1,4 @@
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
@@ -103,13 +104,21 @@ async function insertDefaultData(client) {
     }
 
     // 기본 관리자 계정 생성 (admin/admin123)
-    const hash = await bcrypt.hash('admin123', 10);
+    const adminHash = await bcrypt.hash('admin123', 10);
     await client.query(
         'INSERT INTO admin_users (username, password_hash) VALUES ($1, $2) ON CONFLICT (username) DO NOTHING',
-        ['admin', hash]
+        ['admin', adminHash]
+    );
+
+    // 임시 관리자 계정 생성 (temp/temp123) — 테스트/임시용, 사용 후 삭제 권장
+    const tempHash = await bcrypt.hash('temp123', 10);
+    await client.query(
+        'INSERT INTO admin_users (username, password_hash) VALUES ($1, $2) ON CONFLICT (username) DO NOTHING',
+        ['temp', tempHash]
     );
     
     console.log('기본 관리자 계정이 생성되었습니다. (username: admin, password: admin123)');
+    console.log('임시 계정이 생성되었습니다. (username: temp, password: temp123)');
 }
 
 // 실행
