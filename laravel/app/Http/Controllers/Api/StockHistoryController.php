@@ -11,8 +11,13 @@ class StockHistoryController extends Controller
 {
     public function index(): JsonResponse
     {
-        $history = StockHistory::orderByDesc('created_at')->get();
-        return response()->json($history);
+        try {
+            $history = StockHistory::orderByDesc('created_at')->get();
+            return response()->json($history);
+        } catch (\Throwable $e) {
+            \Log::error('Stock history index error: ' . $e->getMessage(), ['exception' => $e]);
+            return response()->json(['error' => '입출고 내역을 불러올 수 없습니다.', 'detail' => $e->getMessage()], 500);
+        }
     }
 
     public function store(Request $request): JsonResponse

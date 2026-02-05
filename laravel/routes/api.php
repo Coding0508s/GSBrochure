@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\RequestController;
 use App\Http\Controllers\Api\StockHistoryController;
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\ResetDataController;
 
 Route::get('/health', [BrochureController::class, 'health']);
 
@@ -14,6 +15,8 @@ Route::post('brochures', [BrochureController::class, 'store']);
 Route::put('brochures/{id}', [BrochureController::class, 'update']);
 Route::delete('brochures/{id}', [BrochureController::class, 'destroy']);
 Route::put('brochures/{id}/stock', [BrochureController::class, 'updateStock']);
+Route::put('brochures/{id}/stock-warehouse', [BrochureController::class, 'updateWarehouseStock']);
+Route::put('brochures/{id}/transfer-to-hq', [BrochureController::class, 'transferToHq']);
 
 Route::get('contacts', [ContactController::class, 'index']);
 Route::post('contacts', [ContactController::class, 'store']);
@@ -35,3 +38,4 @@ Route::get('admin/users', [AdminController::class, 'users']);
 Route::post('admin/users', [AdminController::class, 'createUser']);
 Route::put('admin/users/{id}/password', [AdminController::class, 'changePassword']);
 Route::delete('admin/users/{id}', [AdminController::class, 'deleteUser']);
+Route::post('admin/reset', [ResetDataController::class, 'reset']);

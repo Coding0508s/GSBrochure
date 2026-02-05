@@ -60,10 +60,12 @@
                     <span class="material-icons text-xl">history</span>
                     신청 내역 조회
                 </a>
+                @if($path !== 'requestbrochure' && $path !== 'requestbrochure-list')
                 <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium {{ $navAdmin ? 'bg-primary/10 text-primary rounded-lg dark:bg-primary/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors' }}" href="{{ url('admin/login') }}">
                     <span class="material-icons text-xl">settings</span>
                     관리자 페이지
                 </a>
+                @endif
             </nav>
             <div class="p-4 border-t border-border-light dark:border-border-dark">
                 <div class="flex items-center gap-3 px-4 py-2">

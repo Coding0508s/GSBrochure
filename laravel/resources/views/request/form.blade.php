@@ -79,7 +79,7 @@
             for (const brochure of brochures) {
                 const masterItem = brochureMaster.find(b => b.id == brochure.brochure);
                 if (masterItem) {
-                    const currentStock = masterItem.stock || 0;
+                    const currentStock = masterItem.stock_warehouse ?? 0;
                     const requestedQuantity = brochure.quantity || 0;
                     if (currentStock < requestedQuantity) {
                         insufficientStock.push({ name: brochure.brochureName, requested: requestedQuantity, available: currentStock });
@@ -100,7 +100,7 @@
             }
 
             for (const change of stockChanges) {
-                await BrochureAPI.updateStock(change.brochureId, -change.quantity, date || new Date().toISOString().split('T')[0]);
+                await BrochureAPI.updateWarehouseStock(change.brochureId, -change.quantity, date || new Date().toISOString().split('T')[0]);
                 await StockHistoryAPI.create({
                     type: '출고',
                     date: date || new Date().toISOString().split('T')[0],

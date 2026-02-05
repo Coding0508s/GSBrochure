@@ -37,7 +37,9 @@ const BrochureAPI = {
     create: (data) => apiCall('/brochures', 'POST', data),
     update: (id, data) => apiCall(`/brochures/${id}`, 'PUT', data),
     delete: (id) => apiCall(`/brochures/${id}`, 'DELETE'),
-    updateStock: (id, quantity, date, memo) => apiCall(`/brochures/${id}/stock`, 'PUT', { quantity, date, memo: memo || '' })
+    updateStock: (id, quantity, date, memo) => apiCall(`/brochures/${id}/stock`, 'PUT', { quantity, date, memo: memo || '' }),
+    updateWarehouseStock: (id, quantity, date, memo) => apiCall(`/brochures/${id}/stock-warehouse`, 'PUT', { quantity, date, memo: memo || '' }),
+    transferToHq: (id, quantity, date, memo) => apiCall(`/brochures/${id}/transfer-to-hq`, 'PUT', { quantity, date, memo: memo || '' })
 };
 const ContactAPI = {
     getAll: () => apiCall('/contacts'),
@@ -61,7 +63,8 @@ const AdminAPI = {
     getAllUsers: () => apiCall('/admin/users'),
     createUser: (username, password) => apiCall('/admin/users', 'POST', { username, password }),
     changePassword: (userId, currentPassword, newPassword) => apiCall(`/admin/users/${userId}/password`, 'PUT', { password: currentPassword, newPassword }),
-    deleteUser: (userId) => apiCall(`/admin/users/${userId}`, 'DELETE')
+    deleteUser: (userId) => apiCall(`/admin/users/${userId}`, 'DELETE'),
+    resetData: (type) => apiCall('/admin/reset', 'POST', { type })
 };
 
 window.BrochureAPI = BrochureAPI;
