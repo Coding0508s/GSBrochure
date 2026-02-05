@@ -27,11 +27,24 @@
     <script src="{{ asset('js/xlsx.full.min.js') }}"></script>
     <script>window.API_BASE_URL = '{{ url("/api") }}';</script>
     <script src="{{ asset('js/api.js') }}"></script>
+    <style>#dashboardSidebar.open{transform:translateX(0);}</style>
 </head>
 <body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-white overflow-hidden">
+    <!-- Mobile header -->
+    <header class="md:hidden sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-white dark:bg-[#1e1e1e] border-b border-slate-200 dark:border-slate-800">
+        <button type="button" id="dashboardMenuBtn" class="p-2 -ml-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="메뉴 열기">
+            <span class="material-symbols-outlined" style="font-size: 24px;">menu</span>
+        </button>
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary" style="font-size: 24px;">library_books</span>
+            <span class="font-bold text-slate-900 dark:text-white text-sm">Brochure Management</span>
+        </div>
+        <div class="w-10"></div>
+    </header>
+    <div id="dashboardOverlay" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden" aria-hidden="true" role="button" tabindex="-1" onclick="document.getElementById('dashboardSidebar').classList.remove('open');this.classList.add('hidden');"></div>
     <div class="flex h-screen w-full">
-        <!-- Side Navigation -->
-        <div class="w-64 shrink-0 flex flex-col bg-white dark:bg-[#1e1e1e] border-r border-slate-200 dark:border-slate-800 h-full">
+        <!-- Side Navigation (drawer on mobile) -->
+        <div id="dashboardSidebar" class="fixed inset-y-0 left-0 z-30 w-64 flex flex-col bg-white dark:bg-[#1e1e1e] border-r border-slate-200 dark:border-slate-800 h-full transform -translate-x-full md:translate-x-0 md:relative transition-transform duration-200 ease-out shrink-0">
             <div class="p-6 pb-2">
                 <div class="flex items-center gap-3 mb-8">
                     <div class="rounded-full size-10 bg-primary/20 flex items-center justify-center">
@@ -67,10 +80,23 @@
                         <span class="material-symbols-outlined" style="font-size: 24px;">local_shipping</span>
                         <span class="text-sm font-medium">운송장 입력</span>
                     </a>
-                    <a href="#" data-nav="outbound" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                        <span class="material-symbols-outlined" style="font-size: 24px;">inventory</span>
-                        <span class="text-sm font-medium">입출고 내역</span>
-                    </a>
+                    <div class="outbound-nav-group">
+                        <button type="button" id="outboundNavToggle" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left">
+                            <span class="material-symbols-outlined" style="font-size: 24px;">inventory</span>
+                            <span class="text-sm font-medium flex-1">입출고 내역</span>
+                            <span class="material-symbols-outlined outbound-chevron text-slate-400 transition-transform" style="font-size: 20px;">expand_more</span>
+                        </button>
+                        <div id="outboundSubmenu" class="outbound-submenu hidden pl-4 mt-0.5 space-y-0.5 border-l-2 border-slate-200 dark:border-slate-700 ml-5">
+                            <a href="#" data-nav="outbound" data-scroll="warehouse" class="nav-link outbound-sub-link flex items-center gap-2 py-2 px-3 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 text-sm transition-colors">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">warehouse</span>
+                                물류센터 입출고 내역
+                            </a>
+                            <a href="#" data-nav="outbound" data-scroll="hq" class="nav-link outbound-sub-link flex items-center gap-2 py-2 px-3 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 text-sm transition-colors">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">business</span>
+                                본사 입출고 내역
+                            </a>
+                        </div>
+                    </div>
                     <a href="#" data-nav="settings" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         <span class="material-symbols-outlined" style="font-size: 24px;">settings</span>
                         <span class="text-sm font-medium">설정</span>
@@ -96,17 +122,17 @@
 
         <!-- Main Content -->
         <div class="flex-1 flex flex-col h-full overflow-y-auto">
-            <header class="w-full px-8 py-6 flex flex-wrap justify-between items-end gap-4 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#1e1e1e]/80 sticky top-0 z-10">
+            <header class="w-full px-4 sm:px-8 py-4 sm:py-6 flex flex-wrap justify-between items-end gap-4 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#1e1e1e]/80 sticky top-0 z-10">
                 <div class="flex flex-col gap-1">
-                    <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white" id="pageTitle">대시보드 개요</h1>
+                    <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white" id="pageTitle">대시보드</h1>
                     <p class="text-slate-500 dark:text-slate-400 text-sm">GS 브로셔 관리 시스템</p>
                 </div>
             </header>
 
-            <div id="alert" class="mx-8 mt-4 hidden rounded-lg px-4 py-3 text-sm" role="alert"></div>
+            <div id="alert" class="mx-4 sm:mx-8 mt-4 hidden rounded-lg px-4 py-3 text-sm" role="alert"></div>
 
             <!-- Dashboard Section -->
-            <section id="section-dashboard" class="content-section px-8 py-6 flex flex-col gap-6">
+            <section id="section-dashboard" class="content-section px-4 sm:px-8 py-4 sm:py-6 flex flex-col gap-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="statsGrid">
                     <!-- 동적 통계 카드 -->
                 </div>
@@ -144,7 +170,7 @@
             </section>
 
             <!-- Inventory Section -->
-            <section id="section-inventory" class="content-section px-8 py-6 hidden">
+            <section id="section-inventory" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden">
                 <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
                     <h2 class="text-xl font-bold text-slate-900 dark:text-white">물류센터 브로셔 관리</h2>
                     <div class="flex gap-2">
@@ -176,7 +202,7 @@
             </section>
 
             <!-- Inventory Section 2 (복제) -->
-            <section id="section-inventory2" class="content-section px-8 py-6 hidden">
+            <section id="section-inventory2" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden">
                 <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
                     <h2 class="text-xl font-bold text-slate-900 dark:text-white">본사 브로셔 관리</h2>
                     <div class="flex gap-2">
@@ -208,7 +234,7 @@
             </section>
 
             <!-- 입출고 내역 (통합) -->
-            <section id="section-outbound" class="content-section px-8 py-6 hidden">
+            <section id="section-outbound" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden">
                 <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
                     <div>
                         <h2 class="text-xl font-bold text-slate-900 dark:text-white">입출고 내역</h2>
@@ -263,36 +289,74 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700" id="outboundTableHead">
-                                    <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300" id="outboundThType" style="display:none;">구분</th>
-                                    <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">날짜</th>
-                                    <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">브로셔명</th>
-                                    <th class="text-right py-3 px-4 font-medium text-slate-700 dark:text-slate-300">수량</th>
-                                    <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">담당자</th>
-                                    <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">기관명</th>
-                                    <th class="text-right py-3 px-4 font-medium text-slate-700 dark:text-slate-300">재고(전→후)</th>
-                                    <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">처리일시</th>
-                                </tr>
-                            </thead>
-                            <tbody id="outboundTableBody">
-                                <!-- 입출고 내역 동적 -->
-                            </tbody>
-                        </table>
+                <!-- 물류센터 입출고 내역 -->
+                <div id="outboundBlockWarehouse" class="mb-8 scroll-mt-4">
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary" style="font-size: 22px;">warehouse</span>
+                        물류센터 입출고 내역
+                    </h3>
+                    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300 outbound-wh-th-type" style="display:none;">구분</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">날짜</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">브로셔명</th>
+                                        <th class="text-right py-3 px-4 font-medium text-slate-700 dark:text-slate-300">수량</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">담당자</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">기관명</th>
+                                        <th class="text-right py-3 px-4 font-medium text-slate-700 dark:text-slate-300">재고(전→후)</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">처리일시</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">메모</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="outboundWarehouseTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="outboundWarehouseEmpty" class="hidden py-12 text-center text-slate-500 dark:text-slate-400 text-sm">물류센터 입출고 내역이 없습니다.</div>
+                        <div id="outboundWarehousePaginationWrap" class="hidden px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2">
+                            <p id="outboundWarehousePaginationInfo" class="text-sm text-slate-600 dark:text-slate-400"></p>
+                            <ul id="outboundWarehousePagination" class="flex items-center gap-2 list-none flex-wrap"></ul>
+                        </div>
                     </div>
-                    <div id="outboundEmpty" class="hidden py-12 text-center text-slate-500 dark:text-slate-400 text-sm">입출고 내역이 없습니다.</div>
-                    <div id="outboundPaginationWrap" class="hidden px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2">
-                        <p id="outboundPaginationInfo" class="text-sm text-slate-600 dark:text-slate-400"></p>
-                        <ul id="outboundPagination" class="flex items-center gap-2 list-none flex-wrap"></ul>
+                </div>
+                <!-- 본사 입출고 내역 -->
+                <div id="outboundBlockHq" class="scroll-mt-4">
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary" style="font-size: 22px;">business</span>
+                        본사 입출고 내역
+                    </h3>
+                    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300 outbound-hq-th-type" style="display:none;">구분</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">날짜</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">브로셔명</th>
+                                        <th class="text-right py-3 px-4 font-medium text-slate-700 dark:text-slate-300">수량</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">담당자</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">기관명</th>
+                                        <th class="text-right py-3 px-4 font-medium text-slate-700 dark:text-slate-300">재고(전→후)</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">처리일시</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">메모</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="outboundHqTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="outboundHqEmpty" class="hidden py-12 text-center text-slate-500 dark:text-slate-400 text-sm">본사 입출고 내역이 없습니다.</div>
+                        <div id="outboundHqPaginationWrap" class="hidden px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2">
+                            <p id="outboundHqPaginationInfo" class="text-sm text-slate-600 dark:text-slate-400"></p>
+                            <ul id="outboundHqPagination" class="flex items-center gap-2 list-none flex-wrap"></ul>
+                        </div>
                     </div>
                 </div>
             </section>
 
             <!-- Logistics (운송장 입력) Section -->
-            <section id="section-logistics" class="content-section px-8 py-6 hidden">
+            <section id="section-logistics" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden">
                 <div class="flex flex-wrap justify-between items-end gap-4 mb-4">
                     <div>
                         <h2 class="text-xl font-bold text-slate-900 dark:text-white">운송장 입력</h2>
@@ -314,7 +378,7 @@
             </section>
 
             <!-- Settings Section -->
-            <section id="section-settings" class="content-section px-8 py-6 hidden">
+            <section id="section-settings" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden">
                 <div class="space-y-8">
                     <div>
                         <div class="flex justify-between items-center mb-4">
@@ -515,6 +579,14 @@
                         <label for="stockQuantity" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">입고 수량</label>
                         <input type="number" id="stockQuantity" min="1" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"/>
                     </div>
+                    <div class="form-group mb-4">
+                        <label for="stockContactName" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">담당자</label>
+                        <input type="text" id="stockContactName" placeholder="입고 처리 담당자" value="관리자" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"/>
+                    </div>
+                    <div class="form-group mb-4">
+                        <label for="stockSchoolName" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">기관명 / 입고처 (선택)</label>
+                        <input type="text" id="stockSchoolName" placeholder="예: OO물류, 출판사 등" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"/>
+                    </div>
                     <div class="flex gap-2 justify-end mt-6">
                         <button type="button" onclick="closeStockModal()" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">취소</button>
                         <button type="submit" class="px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg text-sm font-medium text-white">입고 처리</button>
@@ -605,35 +677,108 @@
             return true;
         }
 
+        var lastOutboundScroll = '';
         function showSection(sectionId) {
             document.querySelectorAll('.content-section').forEach(el => { el.classList.add('hidden'); });
             const section = document.getElementById('section-' + sectionId);
             if (section) section.classList.remove('hidden');
-            document.querySelectorAll('.nav-link').forEach(a => {
-                a.classList.remove('bg-primary/10', 'text-primary');
-                a.classList.add('text-slate-600', 'dark:text-slate-400');
-                if (a.getAttribute('data-nav') === sectionId) {
-                    a.classList.add('bg-primary/10', 'text-primary');
-                    a.classList.remove('text-slate-600', 'dark:text-slate-400');
+            var outboundToggle = document.getElementById('outboundNavToggle');
+            var outboundSub = document.getElementById('outboundSubmenu');
+            var chevrons = document.querySelectorAll('.outbound-chevron');
+            if (sectionId === 'outbound') {
+                document.querySelectorAll('.nav-link').forEach(a => {
+                    a.classList.remove('bg-primary/10', 'text-primary');
+                    a.classList.add('text-slate-600', 'dark:text-slate-400');
+                });
+                if (outboundToggle) {
+                    outboundToggle.classList.add('bg-primary/10', 'text-primary');
+                    outboundToggle.classList.remove('text-slate-600', 'dark:text-slate-400');
                 }
-            });
-            const titles = { dashboard: '대시보드 개요', inventory: '물류센터 브로셔 재고관리', inventory2: '본사 브로셔 재고관리', logistics: '운송장 입력', outbound: '입출고 내역', settings: '설정' };
+                if (outboundSub) outboundSub.classList.remove('hidden');
+                if (chevrons.length) chevrons.forEach(function(c) { c.style.transform = 'rotate(-180deg)'; });
+                applyOutboundBlockVisibility();
+            } else {
+                if (outboundToggle) {
+                    outboundToggle.classList.remove('bg-primary/10', 'text-primary');
+                    outboundToggle.classList.add('text-slate-600', 'dark:text-slate-400');
+                }
+                if (outboundSub) outboundSub.classList.add('hidden');
+                if (chevrons.length) chevrons.forEach(function(c) { c.style.transform = ''; });
+                document.querySelectorAll('.nav-link').forEach(a => {
+                    a.classList.remove('bg-primary/10', 'text-primary');
+                    a.classList.add('text-slate-600', 'dark:text-slate-400');
+                    if (a.getAttribute('data-nav') === sectionId) {
+                        a.classList.add('bg-primary/10', 'text-primary');
+                        a.classList.remove('text-slate-600', 'dark:text-slate-400');
+                    }
+                });
+            }
+            var pageTitleText = { dashboard: '대시보드 개요', inventory: '물류센터 브로셔 재고관리', inventory2: '본사 브로셔 재고관리', logistics: '운송장 입력', outbound: '입출고 내역', settings: '설정' }[sectionId];
+            if (sectionId === 'outbound' && lastOutboundScroll === 'warehouse') pageTitleText = '물류센터 입출고 내역';
+            if (sectionId === 'outbound' && lastOutboundScroll === 'hq') pageTitleText = '본사 입출고 내역';
             const t = document.getElementById('pageTitle');
-            if (t && titles[sectionId]) t.textContent = titles[sectionId];
+            if (t && pageTitleText) t.textContent = pageTitleText;
+            if (window.innerWidth < 768) {
+                var sb = document.getElementById('dashboardSidebar'), ov = document.getElementById('dashboardOverlay');
+                if (sb) sb.classList.remove('open'); if (ov) ov.classList.add('hidden');
+            }
             if (sectionId === 'logistics') loadSavedRequests();
             if (sectionId === 'outbound') loadOutboundHistory();
             if (sectionId === 'inventory2') loadBrochures();
         }
 
+        function applyOutboundBlockVisibility() {
+            var blockWh = document.getElementById('outboundBlockWarehouse');
+            var blockHq = document.getElementById('outboundBlockHq');
+            if (!blockWh || !blockHq) return;
+            if (lastOutboundScroll === 'warehouse') {
+                blockWh.classList.remove('hidden');
+                blockHq.classList.add('hidden');
+            } else if (lastOutboundScroll === 'hq') {
+                blockWh.classList.add('hidden');
+                blockHq.classList.remove('hidden');
+            } else {
+                blockWh.classList.remove('hidden');
+                blockHq.classList.remove('hidden');
+            }
+        }
+
+        function scrollToOutboundBlock(which) {
+            var id = (which === 'hq') ? 'outboundBlockHq' : 'outboundBlockWarehouse';
+            var el = document.getElementById(id);
+            if (el) setTimeout(function() { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
+        }
+
+        (function() {
+            var btn = document.getElementById('outboundNavToggle');
+            if (!btn) return;
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                var sub = document.getElementById('outboundSubmenu');
+                var section = document.getElementById('section-outbound');
+                var chevrons = document.querySelectorAll('.outbound-chevron');
+                if (section && !section.classList.contains('hidden')) {
+                    if (sub) sub.classList.toggle('hidden');
+                    if (chevrons.length) chevrons.forEach(function(c) { c.style.transform = (sub && sub.classList.contains('hidden')) ? '' : 'rotate(-180deg)'; });
+                } else {
+                    lastOutboundScroll = '';
+                    showSection('outbound');
+                }
+            });
+        })();
+
         document.querySelectorAll('[data-nav]').forEach(a => {
             a.addEventListener('click', function(e) {
                 e.preventDefault();
                 const sectionId = this.getAttribute('data-nav');
+                const scrollTo = this.getAttribute('data-scroll');
+                if (sectionId === 'outbound' && scrollTo) lastOutboundScroll = scrollTo;
                 if (sectionId === 'reports') {
                     showSection('outbound');
                     return;
                 }
                 showSection(sectionId);
+                if (scrollTo && sectionId === 'outbound') scrollToOutboundBlock(scrollTo);
             });
         });
 
@@ -721,7 +866,7 @@
                 const rowHtmlHq = function(brochure) {
                     const hqStock = brochure.stock ?? 0;
                     const hqClass = hqStock < 10 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-slate-900 dark:text-white';
-                    const hqStatus = stockStatusText(hqStock);
+                    const hqStatus = stockStatusText(hqStock, 'hq');
                     const lastStockQuantity = brochure.last_stock_quantity ?? 0;
                     const lastStockDate = brochure.last_stock_date || '-';
                     return '<td class="py-3 px-4">' + brochure.id + '</td><td class="py-3 px-4">' + (brochure.name || '') + '</td><td class="py-3 px-4 text-right ' + hqClass + '">' + hqStock + '권</td><td class="py-3 px-4 text-center"><span class="font-medium ' + hqStatus.color + '">' + hqStatus.text + '</span></td><td class="py-3 px-4">' + (lastStockQuantity > 0 ? lastStockQuantity + '권 (' + lastStockDate + ')' : '-') + '</td><td class="py-3 px-4 text-center"><button type="button" onclick="openStockModal(\'' + brochure.id + '\', false)" class="px-2 py-1 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700">입고</button></td><td class="py-3 px-4 text-center"><button type="button" onclick="openStockEditModal(\'' + brochure.id + '\', false)" class="px-2 py-1 rounded bg-slate-500 text-white text-xs font-medium hover:bg-slate-600 mr-1">재고 수정</button><button type="button" onclick="deleteBrochure(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700">삭제</button></td>';
@@ -779,29 +924,32 @@
             } catch (e) { return isoStr; }
         }
 
-        var allStockHistoryList = [], allOutboundList = [], outboundCurrentPage = 1, outboundItemsPerPage = 20, outboundTypeFilter = '';
+        var allStockHistoryList = [], outboundTypeFilter = '', outboundItemsPerPage = 20;
+        var outboundWarehouseCurrentPage = 1, outboundHqCurrentPage = 1;
 
-        function applyOutboundTypeFilter() {
-            var typeEl = document.getElementById('outboundFilterType');
-            outboundTypeFilter = (typeEl && typeEl.value) ? typeEl.value : '';
-            if (outboundTypeFilter === '') {
-                allOutboundList = allStockHistoryList.slice();
-            } else {
-                allOutboundList = allStockHistoryList.filter(function (h) {
-                    if (outboundTypeFilter === '이동') return h.type === '이동' || h.type === '이전';
-                    return h.type === outboundTypeFilter;
-                });
-            }
-            outboundCurrentPage = 1;
-            renderOutboundPage();
+        function matchType(h) {
+            if (!outboundTypeFilter) return true;
+            if (outboundTypeFilter === '이동') return h.type === '이동' || h.type === '이전';
+            return h.type === outboundTypeFilter;
         }
-
-        function getFilteredOutbound() {
+        function getOutboundWarehouseList() {
+            return allStockHistoryList.filter(function (h) {
+                if (h.location !== 'warehouse' && h.location != null) return false;
+                return matchType(h);
+            });
+        }
+        function getOutboundHqList() {
+            return allStockHistoryList.filter(function (h) {
+                if (h.location !== 'hq') return false;
+                return matchType(h);
+            });
+        }
+        function applyDateNameFilter(list) {
             var dateFrom = (document.getElementById('outboundFilterDateFrom') && document.getElementById('outboundFilterDateFrom').value) || '';
             var dateTo = (document.getElementById('outboundFilterDateTo') && document.getElementById('outboundFilterDateTo').value) || '';
             var brochureName = (document.getElementById('outboundFilterBrochureName') && document.getElementById('outboundFilterBrochureName').value || '').trim().toLowerCase();
             var schoolName = (document.getElementById('outboundFilterSchoolName') && document.getElementById('outboundFilterSchoolName').value || '').trim().toLowerCase();
-            return allOutboundList.filter(function (h) {
+            return list.filter(function (h) {
                 if (dateFrom && (h.date || '') < dateFrom) return false;
                 if (dateTo && (h.date || '') > dateTo) return false;
                 if (brochureName && !(h.brochure_name || '').toLowerCase().includes(brochureName)) return false;
@@ -809,71 +957,155 @@
                 return true;
             });
         }
+        function getFilteredOutboundWarehouse() { return applyDateNameFilter(getOutboundWarehouseList()); }
+        function getFilteredOutboundHq() { return applyDateNameFilter(getOutboundHqList()); }
+        function getFilteredOutbound() {
+            return getFilteredOutboundWarehouse().concat(getFilteredOutboundHq()).sort(function (a, b) {
+                var ta = (a.created_at || '').toString(), tb = (b.created_at || '').toString();
+                return tb.localeCompare(ta);
+            });
+        }
 
-        function renderOutboundPage() {
-            var tbody = document.getElementById('outboundTableBody');
-            var emptyEl = document.getElementById('outboundEmpty');
-            var paginationWrap = document.getElementById('outboundPaginationWrap');
-            var paginationInfo = document.getElementById('outboundPaginationInfo');
-            var pagination = document.getElementById('outboundPagination');
+        function applyOutboundTypeFilter() {
+            var typeEl = document.getElementById('outboundFilterType');
+            outboundTypeFilter = (typeEl && typeEl.value) ? typeEl.value : '';
+            outboundWarehouseCurrentPage = 1;
+            outboundHqCurrentPage = 1;
+            renderOutboundWarehousePage();
+            renderOutboundHqPage();
+        }
+
+        function renderOutboundRow(h, showTypeCol) {
+            var typeDisplay = (h.type === '이전' ? '이동' : (h.type || '-'));
+            var typeCell = showTypeCol ? '<td class="py-3 px-4 whitespace-nowrap">' + typeDisplay + '</td>' : '';
+            var memoRaw = (h.memo && String(h.memo).trim()) ? String(h.memo).trim() : '';
+            var memoEsc = memoRaw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            var memoDisplay = memoEsc || '-';
+            return typeCell + '<td class="py-3 px-4 whitespace-nowrap">' + (h.date || '-') + '</td><td class="py-3 px-4 whitespace-nowrap">' + (h.brochure_name || '-') + '</td><td class="py-3 px-4 text-right font-medium whitespace-nowrap">' + (h.quantity ?? '-') + '권</td><td class="py-3 px-4 whitespace-nowrap">' + (h.contact_name || '-') + '</td><td class="py-3 px-4 whitespace-nowrap">' + (h.schoolname || '-') + '</td><td class="py-3 px-4 text-right whitespace-nowrap">' + (h.before_stock ?? '-') + ' → ' + (h.after_stock ?? '-') + '</td><td class="py-3 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">' + formatDateTime(h.created_at) + '</td><td class="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap" title="' + (memoRaw || '').replace(/"/g, '&quot;') + '">' + memoDisplay + '</td>';
+        }
+
+        function renderOutboundWarehousePage() {
+            var tbody = document.getElementById('outboundWarehouseTableBody');
+            var emptyEl = document.getElementById('outboundWarehouseEmpty');
+            var paginationWrap = document.getElementById('outboundWarehousePaginationWrap');
+            var paginationInfo = document.getElementById('outboundWarehousePaginationInfo');
+            var pagination = document.getElementById('outboundWarehousePagination');
+            var showTypeCol = outboundTypeFilter === '';
+            document.querySelectorAll('.outbound-wh-th-type').forEach(function (th) { th.style.display = showTypeCol ? '' : 'none'; });
             if (!tbody) return;
             tbody.innerHTML = '';
-            var filtered = getFilteredOutbound();
+            var filtered = getFilteredOutboundWarehouse();
             var totalItems = filtered.length;
             var totalPages = Math.max(1, Math.ceil(totalItems / outboundItemsPerPage));
-            if (outboundCurrentPage > totalPages) outboundCurrentPage = totalPages;
-            var startIndex = (outboundCurrentPage - 1) * outboundItemsPerPage;
+            if (outboundWarehouseCurrentPage > totalPages) outboundWarehouseCurrentPage = totalPages;
+            var startIndex = (outboundWarehouseCurrentPage - 1) * outboundItemsPerPage;
             var pageItems = filtered.slice(startIndex, startIndex + outboundItemsPerPage);
-
             if (totalItems === 0) {
                 if (emptyEl) emptyEl.classList.remove('hidden');
                 if (paginationWrap) paginationWrap.classList.add('hidden');
                 return;
             }
             if (emptyEl) emptyEl.classList.add('hidden');
-            var showTypeCol = outboundTypeFilter === '';
-            var thType = document.getElementById('outboundThType');
-            if (thType) thType.style.display = showTypeCol ? '' : 'none';
             pageItems.forEach(function (h) {
                 var row = document.createElement('tr');
                 row.className = 'border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50';
-                var typeDisplay = (h.type === '이전' ? '이동' : (h.type || '-'));
-                var typeCell = showTypeCol ? '<td class="py-3 px-4">' + typeDisplay + '</td>' : '';
-                row.innerHTML = typeCell + '<td class="py-3 px-4">' + (h.date || '-') + '</td><td class="py-3 px-4">' + (h.brochure_name || '-') + '</td><td class="py-3 px-4 text-right font-medium">' + (h.quantity ?? '-') + '권</td><td class="py-3 px-4">' + (h.contact_name || '-') + '</td><td class="py-3 px-4">' + (h.schoolname || '-') + '</td><td class="py-3 px-4 text-right">' + (h.before_stock ?? '-') + ' → ' + (h.after_stock ?? '-') + '</td><td class="py-3 px-4 text-slate-500 dark:text-slate-400">' + formatDateTime(h.created_at) + '</td>';
+                row.innerHTML = renderOutboundRow(h, showTypeCol);
                 tbody.appendChild(row);
             });
-
             if (paginationWrap) paginationWrap.classList.remove('hidden');
             if (paginationInfo) paginationInfo.textContent = totalPages <= 1 ? '총 ' + totalItems + '개' : '총 ' + totalItems + '개 중 ' + (startIndex + 1) + '-' + Math.min(startIndex + outboundItemsPerPage, totalItems) + '개 표시';
             if (pagination) pagination.innerHTML = '';
             if (totalPages <= 1) return;
             var prevLi = document.createElement('li');
-            prevLi.innerHTML = '<button type="button" onclick="goToOutboundPage(' + (outboundCurrentPage - 1) + ')" ' + (outboundCurrentPage === 1 ? 'disabled' : '') + ' class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium ' + (outboundCurrentPage === 1 ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800') + '">이전</button>';
+            prevLi.innerHTML = '<button type="button" onclick="goToOutboundWarehousePage(' + (outboundWarehouseCurrentPage - 1) + ')" ' + (outboundWarehouseCurrentPage === 1 ? 'disabled' : '') + ' class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium ' + (outboundWarehouseCurrentPage === 1 ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800') + '">이전</button>';
             pagination.appendChild(prevLi);
-            var startPage = Math.max(1, outboundCurrentPage - 2), endPage = Math.min(totalPages, outboundCurrentPage + 2);
+            var startPage = Math.max(1, outboundWarehouseCurrentPage - 2), endPage = Math.min(totalPages, outboundWarehouseCurrentPage + 2);
             if (startPage > 1) {
                 var li = document.createElement('li');
-                li.innerHTML = '<button type="button" onclick="goToOutboundPage(1)" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">1</button>';
+                li.innerHTML = '<button type="button" onclick="goToOutboundWarehousePage(1)" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">1</button>';
                 pagination.appendChild(li);
                 if (startPage > 2) { var d = document.createElement('li'); d.innerHTML = '<span class="px-2 text-slate-400">...</span>'; pagination.appendChild(d); }
             }
             for (var p = startPage; p <= endPage; p++) {
                 var li = document.createElement('li');
-                li.innerHTML = '<button type="button" onclick="goToOutboundPage(' + p + ')" class="px-3 py-1.5 rounded-lg border text-sm font-medium ' + (p === outboundCurrentPage ? 'bg-primary border-primary text-white' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800') + '">' + p + '</button>';
+                li.innerHTML = '<button type="button" onclick="goToOutboundWarehousePage(' + p + ')" class="px-3 py-1.5 rounded-lg border text-sm font-medium ' + (p === outboundWarehouseCurrentPage ? 'bg-primary border-primary text-white' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800') + '">' + p + '</button>';
                 pagination.appendChild(li);
             }
             if (endPage < totalPages) {
                 if (endPage < totalPages - 1) { var d = document.createElement('li'); d.innerHTML = '<span class="px-2 text-slate-400">...</span>'; pagination.appendChild(d); }
                 var li = document.createElement('li');
-                li.innerHTML = '<button type="button" onclick="goToOutboundPage(' + totalPages + ')" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">' + totalPages + '</button>';
+                li.innerHTML = '<button type="button" onclick="goToOutboundWarehousePage(' + totalPages + ')" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">' + totalPages + '</button>';
                 pagination.appendChild(li);
             }
             var nextLi = document.createElement('li');
-            nextLi.innerHTML = '<button type="button" onclick="goToOutboundPage(' + (outboundCurrentPage + 1) + ')" ' + (outboundCurrentPage === totalPages ? 'disabled' : '') + ' class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium ' + (outboundCurrentPage === totalPages ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800') + '">다음</button>';
+            nextLi.innerHTML = '<button type="button" onclick="goToOutboundWarehousePage(' + (outboundWarehouseCurrentPage + 1) + ')" ' + (outboundWarehouseCurrentPage === totalPages ? 'disabled' : '') + ' class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium ' + (outboundWarehouseCurrentPage === totalPages ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800') + '">다음</button>';
             pagination.appendChild(nextLi);
         }
 
-        function applyOutboundFilter() { outboundCurrentPage = 1; renderOutboundPage(); }
+        function renderOutboundHqPage() {
+            var tbody = document.getElementById('outboundHqTableBody');
+            var emptyEl = document.getElementById('outboundHqEmpty');
+            var paginationWrap = document.getElementById('outboundHqPaginationWrap');
+            var paginationInfo = document.getElementById('outboundHqPaginationInfo');
+            var pagination = document.getElementById('outboundHqPagination');
+            var showTypeCol = outboundTypeFilter === '';
+            document.querySelectorAll('.outbound-hq-th-type').forEach(function (th) { th.style.display = showTypeCol ? '' : 'none'; });
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            var filtered = getFilteredOutboundHq();
+            var totalItems = filtered.length;
+            var totalPages = Math.max(1, Math.ceil(totalItems / outboundItemsPerPage));
+            if (outboundHqCurrentPage > totalPages) outboundHqCurrentPage = totalPages;
+            var startIndex = (outboundHqCurrentPage - 1) * outboundItemsPerPage;
+            var pageItems = filtered.slice(startIndex, startIndex + outboundItemsPerPage);
+            if (totalItems === 0) {
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                if (paginationWrap) paginationWrap.classList.add('hidden');
+                return;
+            }
+            if (emptyEl) emptyEl.classList.add('hidden');
+            pageItems.forEach(function (h) {
+                var row = document.createElement('tr');
+                row.className = 'border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50';
+                row.innerHTML = renderOutboundRow(h, showTypeCol);
+                tbody.appendChild(row);
+            });
+            if (paginationWrap) paginationWrap.classList.remove('hidden');
+            if (paginationInfo) paginationInfo.textContent = totalPages <= 1 ? '총 ' + totalItems + '개' : '총 ' + totalItems + '개 중 ' + (startIndex + 1) + '-' + Math.min(startIndex + outboundItemsPerPage, totalItems) + '개 표시';
+            if (pagination) pagination.innerHTML = '';
+            if (totalPages <= 1) return;
+            var prevLi = document.createElement('li');
+            prevLi.innerHTML = '<button type="button" onclick="goToOutboundHqPage(' + (outboundHqCurrentPage - 1) + ')" ' + (outboundHqCurrentPage === 1 ? 'disabled' : '') + ' class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium ' + (outboundHqCurrentPage === 1 ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800') + '">이전</button>';
+            pagination.appendChild(prevLi);
+            var startPage = Math.max(1, outboundHqCurrentPage - 2), endPage = Math.min(totalPages, outboundHqCurrentPage + 2);
+            if (startPage > 1) {
+                var li = document.createElement('li');
+                li.innerHTML = '<button type="button" onclick="goToOutboundHqPage(1)" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">1</button>';
+                pagination.appendChild(li);
+                if (startPage > 2) { var d = document.createElement('li'); d.innerHTML = '<span class="px-2 text-slate-400">...</span>'; pagination.appendChild(d); }
+            }
+            for (var p = startPage; p <= endPage; p++) {
+                var li = document.createElement('li');
+                li.innerHTML = '<button type="button" onclick="goToOutboundHqPage(' + p + ')" class="px-3 py-1.5 rounded-lg border text-sm font-medium ' + (p === outboundHqCurrentPage ? 'bg-primary border-primary text-white' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800') + '">' + p + '</button>';
+                pagination.appendChild(li);
+            }
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) { var d = document.createElement('li'); d.innerHTML = '<span class="px-2 text-slate-400">...</span>'; pagination.appendChild(d); }
+                var li = document.createElement('li');
+                li.innerHTML = '<button type="button" onclick="goToOutboundHqPage(' + totalPages + ')" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">' + totalPages + '</button>';
+                pagination.appendChild(li);
+            }
+            var nextLi = document.createElement('li');
+            nextLi.innerHTML = '<button type="button" onclick="goToOutboundHqPage(' + (outboundHqCurrentPage + 1) + ')" ' + (outboundHqCurrentPage === totalPages ? 'disabled' : '') + ' class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium ' + (outboundHqCurrentPage === totalPages ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800') + '">다음</button>';
+            pagination.appendChild(nextLi);
+        }
+
+        function applyOutboundFilter() {
+            outboundWarehouseCurrentPage = 1;
+            outboundHqCurrentPage = 1;
+            renderOutboundWarehousePage();
+            renderOutboundHqPage();
+        }
         function resetOutboundFilter() {
             var from = document.getElementById('outboundFilterDateFrom');
             var to = document.getElementById('outboundFilterDateTo');
@@ -886,23 +1118,35 @@
             if (school) school.value = '';
             if (typeEl) typeEl.value = '';
             outboundTypeFilter = '';
-            allOutboundList = allStockHistoryList.slice();
-            outboundCurrentPage = 1;
-            renderOutboundPage();
+            outboundWarehouseCurrentPage = 1;
+            outboundHqCurrentPage = 1;
+            renderOutboundWarehousePage();
+            renderOutboundHqPage();
         }
-        function goToOutboundPage(page) {
-            var filtered = getFilteredOutbound();
+        function goToOutboundWarehousePage(page) {
+            var filtered = getFilteredOutboundWarehouse();
             var totalPages = Math.max(1, Math.ceil(filtered.length / outboundItemsPerPage));
             if (page < 1 || page > totalPages) return;
-            outboundCurrentPage = page;
-            renderOutboundPage();
+            outboundWarehouseCurrentPage = page;
+            renderOutboundWarehousePage();
+        }
+        function goToOutboundHqPage(page) {
+            var filtered = getFilteredOutboundHq();
+            var totalPages = Math.max(1, Math.ceil(filtered.length / outboundItemsPerPage));
+            if (page < 1 || page > totalPages) return;
+            outboundHqCurrentPage = page;
+            renderOutboundHqPage();
         }
 
         async function loadOutboundHistory() {
-            var emptyEl = document.getElementById('outboundEmpty');
-            var paginationWrap = document.getElementById('outboundPaginationWrap');
-            if (paginationWrap) paginationWrap.classList.add('hidden');
-            if (emptyEl) emptyEl.classList.add('hidden');
+            var emptyWh = document.getElementById('outboundWarehouseEmpty');
+            var emptyHq = document.getElementById('outboundHqEmpty');
+            var paginationWh = document.getElementById('outboundWarehousePaginationWrap');
+            var paginationHq = document.getElementById('outboundHqPaginationWrap');
+            if (paginationWh) paginationWh.classList.add('hidden');
+            if (paginationHq) paginationHq.classList.add('hidden');
+            if (emptyWh) emptyWh.classList.add('hidden');
+            if (emptyHq) emptyHq.classList.add('hidden');
             try {
                 var history = await StockHistoryAPI.getAll();
                 if (!Array.isArray(history)) history = [];
@@ -914,14 +1158,17 @@
                 if (err && err.message) msg += ' (' + String(err.message).replace(/^Error:\s*/i, '') + ')';
                 showAlert(msg, 'danger');
                 allStockHistoryList = [];
-                allOutboundList = [];
-                if (emptyEl) emptyEl.classList.remove('hidden');
+                if (emptyWh) emptyWh.classList.remove('hidden');
+                if (emptyHq) emptyHq.classList.remove('hidden');
             }
         }
 
-        const LOW_STOCK_THRESHOLD = 900;
-        function stockStatusText(stock) {
-            if (stock <= LOW_STOCK_THRESHOLD) return { text: '재고 부족', color: 'text-red-600 dark:text-red-400' };
+        const LOW_STOCK_THRESHOLD = 900;   // 물류센터: 900권 이하 재고 부족
+        const LOW_STOCK_THRESHOLD_HQ = 50;  // 본사: 50권 이하 재고 부족
+        function stockStatusText(stock, type) {
+            var threshold = (type === 'hq') ? LOW_STOCK_THRESHOLD_HQ : LOW_STOCK_THRESHOLD;
+            if (stock <= threshold) return { text: '재고 부족', color: 'text-red-600 dark:text-red-400' };
+            if (type === 'hq') return { text: '충분', color: 'text-green-600 dark:text-green-400' };
             if (stock < 1500) return { text: '보통', color: 'text-amber-500' };
             return { text: '충분', color: 'text-green-600 dark:text-green-400' };
         }
@@ -961,7 +1208,7 @@
                     const warehouseStock = b.stock_warehouse ?? 0;
                     const hqStock = b.stock || 0;
                     const warehouseStatus = stockStatusText(warehouseStock);
-                    const hqStatus = stockStatusText(hqStock);
+                    const hqStatus = stockStatusText(hqStock, 'hq');
                     const row = document.createElement('tr');
                     row.className = 'border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50';
                     row.innerHTML = '<td class="py-2 px-3">' + (b.name || '') + '</td><td class="py-2 px-3 text-right font-medium">' + warehouseStock + '권</td><td class="py-2 px-3 text-center"><span class="font-medium ' + warehouseStatus.color + '">' + warehouseStatus.text + '</span></td><td class="py-2 px-3 text-right font-medium">' + hqStock + '권</td><td class="py-2 px-3 text-center"><span class="font-medium ' + hqStatus.color + '">' + hqStatus.text + '</span></td>';
@@ -1039,6 +1286,10 @@
                     document.getElementById('stockBrochureName').textContent = '브로셔명: ' + brochure.name;
                     document.getElementById('stockDate').value = new Date().toISOString().slice(0, 10);
                     document.getElementById('stockQuantity').value = 1;
+                    var contactEl = document.getElementById('stockContactName');
+                    if (contactEl) contactEl.value = '관리자';
+                    var schoolEl = document.getElementById('stockSchoolName');
+                    if (schoolEl) schoolEl.value = '';
                     document.getElementById('stockModal').classList.remove('hidden');
                 }
             } catch (e) { showAlert('브로셔 정보를 불러오는 중 오류가 발생했습니다.', 'danger'); }
@@ -1056,6 +1307,8 @@
             var target = currentStockTarget;
             var quantity = parseInt(document.getElementById('stockQuantity').value, 10) || 0;
             var date = document.getElementById('stockDate').value;
+            var contactName = (document.getElementById('stockContactName') && document.getElementById('stockContactName').value.trim()) || '관리자';
+            var schoolName = (document.getElementById('stockSchoolName') && document.getElementById('stockSchoolName').value.trim()) || '';
             if (quantity <= 0 || !date) { showAlert('입고 수량과 날짜를 확인해주세요.', 'danger'); return; }
             try {
                 var brochures = await BrochureAPI.getAll();
@@ -1063,13 +1316,13 @@
                 if (!brochure) { showAlert('브로셔를 찾을 수 없습니다.', 'danger'); return; }
                 if (target === 'warehouse') {
                     var beforeStock = brochure.stock_warehouse ?? 0;
-                    await BrochureAPI.updateWarehouseStock(id, quantity, date, '입고');
-                    await StockHistoryAPI.create({ type: '입고', date: date, brochure_id: id, brochure_name: brochure.name, quantity: quantity, contact_name: '관리자', before_stock: beforeStock, after_stock: beforeStock + quantity });
+                    await BrochureAPI.updateWarehouseStock(id, quantity, date);
+                    await StockHistoryAPI.create({ type: '입고', location: 'warehouse', date: date, brochure_id: id, brochure_name: brochure.name, quantity: quantity, contact_name: contactName, schoolname: schoolName || undefined, before_stock: beforeStock, after_stock: beforeStock + quantity });
                     showAlert(quantity + '권이 물류창고에 입고되었습니다. (입고일: ' + date + ')');
                 } else {
                     var beforeStock = brochure.stock || 0;
                     await BrochureAPI.updateStock(id, quantity, date);
-                    await StockHistoryAPI.create({ type: '입고', date: date, brochure_id: id, brochure_name: brochure.name, quantity: quantity, contact_name: '관리자', before_stock: beforeStock, after_stock: beforeStock + quantity });
+                    await StockHistoryAPI.create({ type: '입고', location: 'hq', date: date, brochure_id: id, brochure_name: brochure.name, quantity: quantity, contact_name: contactName, schoolname: schoolName || undefined, before_stock: beforeStock, after_stock: beforeStock + quantity });
                     showAlert(quantity + '권이 본사에 입고되었습니다. (입고일: ' + date + ')');
                 }
                 await loadBrochures();
@@ -1227,14 +1480,15 @@
         function exportStockHistoryToExcel(rows, fileLabel) {
             if (typeof XLSX === 'undefined') { showAlert('엑셀 라이브러리를 불러오지 못했습니다. 페이지를 새로고침한 후 다시 시도해주세요.', 'danger'); return; }
             if (!Array.isArray(rows) || rows.length === 0) { showAlert('다운로드할 입출고 내역이 없습니다.', 'danger'); return; }
-            var excelData = [['구분', '날짜', '브로셔명', '수량', '담당자', '기관명', '이전 재고', '이후 재고', '처리 시간']];
+            var excelData = [['장소', '구분', '날짜', '브로셔명', '수량', '담당자', '기관명', '이전 재고', '이후 재고', '처리 시간', '메모']];
             rows.forEach(function(item) {
+                var locationLabel = (item.location === 'warehouse' ? '물류센터' : (item.location === 'hq' ? '본사' : ''));
                 var typeExcel = (item.type === '이전' ? '이동' : (item.type || ''));
-                excelData.push([typeExcel, item.date || '', item.brochure_name || '', item.quantity || 0, item.contact_name || '', item.schoolname || '', item.before_stock || 0, item.after_stock || 0, item.created_at ? new Date(item.created_at).toLocaleString('ko-KR') : '']);
+                excelData.push([locationLabel, typeExcel, item.date || '', item.brochure_name || '', item.quantity || 0, item.contact_name || '', item.schoolname || '', item.before_stock || 0, item.after_stock || 0, item.created_at ? new Date(item.created_at).toLocaleString('ko-KR') : '', item.memo || '']);
             });
             var wb = XLSX.utils.book_new();
             var ws = XLSX.utils.aoa_to_sheet(excelData);
-            ws['!cols'] = [{ wch: 10 }, { wch: 12 }, { wch: 30 }, { wch: 10 }, { wch: 15 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 20 }];
+            ws['!cols'] = [{ wch: 8 }, { wch: 10 }, { wch: 12 }, { wch: 30 }, { wch: 10 }, { wch: 15 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 30 }];
             XLSX.utils.book_append_sheet(wb, ws, '입출고 내역');
             var dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
             XLSX.writeFile(wb, '입출고내역' + (fileLabel ? '_' + fileLabel + '_' : '_') + dateStr + '.xlsx');
@@ -1514,6 +1768,14 @@
         var logisticsFormEl = document.getElementById('logisticsForm');
         if (logisticsFormEl) logisticsFormEl.addEventListener('submit', function(e) { e.preventDefault(); showAlert('각 건마다 개별 저장 버튼을 사용해주세요.', 'danger'); });
 
+        (function mobileMenu() {
+            var btn = document.getElementById('dashboardMenuBtn'), sb = document.getElementById('dashboardSidebar'), ov = document.getElementById('dashboardOverlay');
+            if (btn && sb && ov) {
+                btn.addEventListener('click', function() { sb.classList.toggle('open'); ov.classList.toggle('hidden', !sb.classList.contains('open')); });
+                ov.addEventListener('click', function() { sb.classList.remove('open'); ov.classList.add('hidden'); });
+                sb.querySelectorAll('.nav-link').forEach(function(a) { a.addEventListener('click', function() { sb.classList.remove('open'); ov.classList.add('hidden'); }); });
+            }
+        })();
         window.addEventListener('DOMContentLoaded', async function() {
             if (!checkLogin()) return;
             await loadBrochures();

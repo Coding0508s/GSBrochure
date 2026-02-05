@@ -10,7 +10,7 @@ class StockHistory extends Model
     protected $table = 'stock_history';
 
     protected $fillable = [
-        'type', 'date', 'brochure_id', 'brochure_name', 'quantity',
+        'type', 'location', 'date', 'brochure_id', 'brochure_name', 'quantity',
         'contact_name', 'schoolname', 'before_stock', 'after_stock', 'memo',
     ];
 

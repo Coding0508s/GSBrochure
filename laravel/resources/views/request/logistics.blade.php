@@ -27,11 +27,17 @@
     <script src="{{ asset('js/xlsx.full.min.js') }}"></script>
     <script>window.API_BASE_URL = '{{ url("/api") }}';</script>
     <script src="{{ asset('js/api.js') }}"></script>
+    <style>#logisticsSidebar.open{transform:translateX(0);}</style>
 </head>
 <body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-white overflow-hidden">
+    <header class="md:hidden sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-white dark:bg-[#1e1e1e] border-b border-slate-200 dark:border-slate-800">
+        <button type="button" id="logisticsMenuBtn" class="p-2 -ml-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="메뉴 열기"><span class="material-symbols-outlined" style="font-size:24px;">menu</span></button>
+        <div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary" style="font-size:24px;">library_books</span><span class="font-bold text-slate-900 dark:text-white text-sm">운송장 입력</span></div>
+        <div class="w-10"></div>
+    </header>
+    <div id="logisticsOverlay" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden" aria-hidden="true" onclick="document.getElementById('logisticsSidebar').classList.remove('open');this.classList.add('hidden');"></div>
     <div class="flex h-screen w-full">
-        <!-- Side Navigation -->
-        <div class="w-64 shrink-0 flex flex-col bg-white dark:bg-[#1e1e1e] border-r border-slate-200 dark:border-slate-800 h-full">
+        <div id="logisticsSidebar" class="fixed inset-y-0 left-0 z-30 w-64 flex flex-col bg-white dark:bg-[#1e1e1e] border-r border-slate-200 dark:border-slate-800 h-full -translate-x-full md:translate-x-0 md:relative transition-transform duration-200 shrink-0">
             <div class="p-6 pb-2">
                 <div class="flex items-center gap-3 mb-8">
                     <div class="rounded-full size-10 bg-primary/20 flex items-center justify-center">
@@ -394,6 +400,13 @@
             showAlert('엑셀 파일이 다운로드되었습니다.', 'success');
         }
 
+        (function(){
+            var btn=document.getElementById('logisticsMenuBtn'),sb=document.getElementById('logisticsSidebar'),ov=document.getElementById('logisticsOverlay');
+            if(btn&&sb&&ov){
+                btn.addEventListener('click',function(){sb.classList.toggle('open');ov.classList.toggle('hidden',!sb.classList.contains('open'));});
+                sb.querySelectorAll('nav a').forEach(function(a){a.addEventListener('click',function(){sb.classList.remove('open');ov.classList.add('hidden');});});
+            }
+        })();
         window.addEventListener('DOMContentLoaded', function() {
             loadSavedRequests();
         });

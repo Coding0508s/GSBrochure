@@ -82,6 +82,7 @@ class BrochureController extends Controller
         if ($memo !== null && $memo !== '') {
             StockHistory::create([
                 'type' => '수정',
+                'location' => 'hq',
                 'date' => $date,
                 'brochure_id' => $brochure->id,
                 'brochure_name' => $brochure->name,
@@ -121,6 +122,7 @@ class BrochureController extends Controller
         if ($memo !== null && $memo !== '') {
             StockHistory::create([
                 'type' => '수정',
+                'location' => 'warehouse',
                 'date' => $date,
                 'brochure_id' => $brochure->id,
                 'brochure_name' => $brochure->name,
@@ -162,8 +164,10 @@ class BrochureController extends Controller
             'last_stock_date' => $date,
         ]);
         $memoText = '물류창고→본사 이동' . ($memo ? ' - ' . $memo : '');
+        // 물류센터 입출고 내역용 (물류 재고 감소)
         StockHistory::create([
             'type' => '이동',
+            'location' => 'warehouse',
             'date' => $date,
             'brochure_id' => $brochure->id,
             'brochure_name' => $brochure->name,
@@ -172,6 +176,20 @@ class BrochureController extends Controller
             'schoolname' => '',
             'before_stock' => $warehouseBefore,
             'after_stock' => $warehouseBefore - $quantity,
+            'memo' => $memoText,
+        ]);
+        // 본사 입출고 내역용 (본사 재고 증가)
+        StockHistory::create([
+            'type' => '이동',
+            'location' => 'hq',
+            'date' => $date,
+            'brochure_id' => $brochure->id,
+            'brochure_name' => $brochure->name,
+            'quantity' => $quantity,
+            'contact_name' => '',
+            'schoolname' => '',
+            'before_stock' => $hqBefore,
+            'after_stock' => $hqBefore + $quantity,
             'memo' => $memoText,
         ]);
         return response()->json([

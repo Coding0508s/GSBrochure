@@ -76,13 +76,17 @@
             const insufficientStock = [];
             const stockChanges = [];
 
+            const MIN_STOCK_FOR_REQUEST = 100; // 재고 부족이어도 100권 이상이면 신청 가능
+
             for (const brochure of brochures) {
                 const masterItem = brochureMaster.find(b => b.id == brochure.brochure);
                 if (masterItem) {
                     const currentStock = masterItem.stock_warehouse ?? 0;
                     const requestedQuantity = brochure.quantity || 0;
-                    if (currentStock < requestedQuantity) {
-                        insufficientStock.push({ name: brochure.brochureName, requested: requestedQuantity, available: currentStock });
+                    if (currentStock < MIN_STOCK_FOR_REQUEST) {
+                        insufficientStock.push({ name: brochure.brochureName, requested: requestedQuantity, available: currentStock, reason: 'min' });
+                    } else if (currentStock < requestedQuantity) {
+                        insufficientStock.push({ name: brochure.brochureName, requested: requestedQuantity, available: currentStock, reason: 'qty' });
                     } else {
                         stockChanges.push({
                             brochureId: brochure.brochure,
@@ -103,6 +107,7 @@
                 await BrochureAPI.updateWarehouseStock(change.brochureId, -change.quantity, date || new Date().toISOString().split('T')[0]);
                 await StockHistoryAPI.create({
                     type: '출고',
+                    location: 'warehouse',
                     date: date || new Date().toISOString().split('T')[0],
                     brochure_id: change.brochureId,
                     brochure_name: change.brochureName,
@@ -329,9 +334,13 @@
             const stockResult = await deductBrochureStock(brochures, contactName, schoolname, date);
             if (!stockResult.success) {
                 if (stockResult.insufficient) {
-                    let message = '재고가 부족합니다:\n';
+                    let message = '신청할 수 없습니다:\n';
                     stockResult.insufficient.forEach(item => {
-                        message += `- ${item.name}: 요청 ${item.requested}권, 보유 ${item.available}권\n`;
+                        if (item.reason === 'min') {
+                            message += `- ${item.name}: 현재 재고 ${item.available}권 (100권 이상일 때만 신청 가능)\n`;
+                        } else {
+                            message += `- ${item.name}: 요청 ${item.requested}권, 보유 ${item.available}권\n`;
+                        }
                     });
                     alert(message);
                 } else {

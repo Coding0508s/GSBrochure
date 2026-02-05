@@ -24,6 +24,7 @@ class StockHistoryController extends Controller
     {
         $data = $request->validate([
             'type' => 'required|string',
+            'location' => 'nullable|string|in:warehouse,hq',
             'date' => 'required|string',
             'brochure_id' => 'required|integer',
             'brochure_name' => 'required|string',
@@ -32,6 +33,7 @@ class StockHistoryController extends Controller
             'schoolname' => 'nullable|string',
             'before_stock' => 'required|integer',
             'after_stock' => 'required|integer',
+            'memo' => 'nullable|string|max:1000',
         ]);
         StockHistory::create($data);
         return response()->json(['success' => true]);
