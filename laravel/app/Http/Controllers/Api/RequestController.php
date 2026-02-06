@@ -102,11 +102,11 @@ class RequestController extends Controller
                         '@type' => 'MessageCard',
                         '@context' => 'http://schema.org/extensions',
                         'themeColor' => '590091',
-                        'summary' => '브로셔 발송 요청 (물류창고)',
+                        'summary' => '브로셔 발송 요청',
                         'sections' => [
                             [
                                 'markdown' => true,
-                                'activityTitle' => '**브로셔 발송 요청** (물류창고)',
+                                'activityTitle' => '**브로셔 발송 요청**',
                                 'facts' => [
                                     ['name' => '담당자', 'value' => $req->contact_name ?? '-'],
                                     ['name' => '기관명', 'value' => $req->schoolname ?? '-'],
@@ -117,7 +117,7 @@ class RequestController extends Controller
                                 ],
                             ],
                             [
-                                'activityTitle' => '**신청 브로셔**',
+                                'activityTitle' => '**발송 브로셔 목록**',
                                 'facts' => $brochureFacts,
                             ],
                         ],
