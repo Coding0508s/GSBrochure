@@ -5,8 +5,8 @@
 @section('sidebar-footer-label', '관리자 페이지')
 
 @section('content')
-    <div class="max-w-md mx-auto">
-        <header class="mb-8">
+    <div class="max-w-md mx-auto mt-10">
+        <header class="mb-3 text-center">
             <h1 class="text-3xl font-bold text-primary dark:text-purple-400 mb-2">관리자 로그인</h1>
             <p class="text-gray-600 dark:text-gray-300">관리자 계정으로 로그인하세요.</p>
         </header>

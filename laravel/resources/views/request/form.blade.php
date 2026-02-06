@@ -39,7 +39,7 @@
         <div class="flex justify-end pt-4">
             <button type="button" class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 border-2 border-secondary text-secondary font-medium rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" onclick="addRow()">
                 <span class="material-icons text-sm">add_business</span>
-                다른 기관 추가
+                기관 추가
             </button>
         </div>
     </form>
