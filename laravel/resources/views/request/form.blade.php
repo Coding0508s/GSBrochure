@@ -200,6 +200,8 @@
         `;
 
         rowsContainer.appendChild(rowDiv);
+        const dateInput = document.getElementById(`date-${rowCount}`);
+        if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
         addBrochureItem(rowCount, true).catch(err => console.error('브로셔 항목 추가 오류:', err));
         addInvoiceField(rowCount, []);
     }

@@ -30,7 +30,7 @@
         </form>
 
         <p class="mt-6 text-center">
-            <a href="{{ url('requestbrochure') }}" class="text-primary hover:underline text-sm">← 신청 페이지로 돌아가기</a>
+            <a href="{{ url('/') }}" class="text-primary hover:underline text-sm">← 메인 페이지로 돌아가기</a>
         </p>
     </div>
 @endsection
