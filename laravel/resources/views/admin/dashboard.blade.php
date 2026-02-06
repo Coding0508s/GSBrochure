@@ -60,10 +60,23 @@
                         <span class="material-symbols-outlined" style="font-size: 24px;">grid_view</span>
                         <span class="text-sm font-medium">대시보드</span>
                     </a>
-                    <a href="#" data-nav="inventory" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                        <span class="material-symbols-outlined" style="font-size: 24px;">inventory_2</span>
-                        <span class="text-sm font-medium">물류센터 브로셔 재고관리</span>
-                    </a>
+                    <div class="warehouse-nav-group">
+                        <button type="button" id="warehouseNavToggle" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left">
+                            <span class="material-symbols-outlined" style="font-size: 24px;">warehouse</span>
+                            <span class="text-sm font-medium flex-1">물류창고</span>
+                            <span class="material-symbols-outlined warehouse-chevron text-slate-400 transition-transform" style="font-size: 20px;">expand_more</span>
+                        </button>
+                        <div id="warehouseSubmenu" class="hidden pl-4 mt-0.5 space-y-0.5 border-l-2 border-slate-200 dark:border-slate-700 ml-5">
+                            <a href="#" data-nav="inventory" class="nav-link flex items-center gap-2 py-2 px-3 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 text-sm transition-colors">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">inventory_2</span>
+                                물류센터 브로셔 재고관리
+                            </a>
+                            <a href="#" data-nav="logistics" class="nav-link flex items-center gap-2 py-2 px-3 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 text-sm transition-colors">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">local_shipping</span>
+                                운송장 입력
+                            </a>
+                        </div>
+                    </div>
                     <a href="#" data-nav="inventory2" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         <span class="material-symbols-outlined" style="font-size: 24px;">inventory_2</span>
                         <span class="text-sm font-medium">본사 브로셔 재고관리</span>
@@ -75,10 +88,6 @@
                     <a href="{{ url('requestbrochure-list') }}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         <span class="material-symbols-outlined" style="font-size: 24px;">campaign</span>
                         <span class="text-sm font-medium">신청 내역</span>
-                    </a>
-                    <a href="#" data-nav="logistics" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                        <span class="material-symbols-outlined" style="font-size: 24px;">local_shipping</span>
-                        <span class="text-sm font-medium">운송장 입력</span>
                     </a>
                     <div class="outbound-nav-group">
                         <button type="button" id="outboundNavToggle" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left">
@@ -697,6 +706,36 @@
                 if (outboundSub) outboundSub.classList.remove('hidden');
                 if (chevrons.length) chevrons.forEach(function(c) { c.style.transform = 'rotate(-180deg)'; });
                 applyOutboundBlockVisibility();
+                var warehouseSub = document.getElementById('warehouseSubmenu');
+                var warehouseToggle = document.getElementById('warehouseNavToggle');
+                var warehouseChevrons = document.querySelectorAll('.warehouse-chevron');
+                if (warehouseSub) warehouseSub.classList.add('hidden');
+                if (warehouseToggle) { warehouseToggle.classList.remove('bg-primary/10', 'text-primary'); warehouseToggle.classList.add('text-slate-600', 'dark:text-slate-400'); }
+                if (warehouseChevrons.length) warehouseChevrons.forEach(function(c) { c.style.transform = ''; });
+            } else if (sectionId === 'inventory' || sectionId === 'logistics') {
+                var warehouseSub = document.getElementById('warehouseSubmenu');
+                var warehouseToggle = document.getElementById('warehouseNavToggle');
+                var warehouseChevrons = document.querySelectorAll('.warehouse-chevron');
+                if (warehouseSub) warehouseSub.classList.remove('hidden');
+                if (warehouseToggle) {
+                    warehouseToggle.classList.add('bg-primary/10', 'text-primary');
+                    warehouseToggle.classList.remove('text-slate-600', 'dark:text-slate-400');
+                }
+                if (warehouseChevrons.length) warehouseChevrons.forEach(function(c) { c.style.transform = 'rotate(-180deg)'; });
+                if (outboundToggle) {
+                    outboundToggle.classList.remove('bg-primary/10', 'text-primary');
+                    outboundToggle.classList.add('text-slate-600', 'dark:text-slate-400');
+                }
+                if (outboundSub) outboundSub.classList.add('hidden');
+                if (chevrons.length) chevrons.forEach(function(c) { c.style.transform = ''; });
+                document.querySelectorAll('.nav-link').forEach(a => {
+                    a.classList.remove('bg-primary/10', 'text-primary');
+                    a.classList.add('text-slate-600', 'dark:text-slate-400');
+                    if (a.getAttribute('data-nav') === sectionId) {
+                        a.classList.add('bg-primary/10', 'text-primary');
+                        a.classList.remove('text-slate-600', 'dark:text-slate-400');
+                    }
+                });
             } else {
                 if (outboundToggle) {
                     outboundToggle.classList.remove('bg-primary/10', 'text-primary');
@@ -704,6 +743,12 @@
                 }
                 if (outboundSub) outboundSub.classList.add('hidden');
                 if (chevrons.length) chevrons.forEach(function(c) { c.style.transform = ''; });
+                var warehouseSub = document.getElementById('warehouseSubmenu');
+                var warehouseToggle = document.getElementById('warehouseNavToggle');
+                var warehouseChevrons = document.querySelectorAll('.warehouse-chevron');
+                if (warehouseSub) warehouseSub.classList.add('hidden');
+                if (warehouseToggle) { warehouseToggle.classList.remove('bg-primary/10', 'text-primary'); warehouseToggle.classList.add('text-slate-600', 'dark:text-slate-400'); }
+                if (warehouseChevrons.length) warehouseChevrons.forEach(function(c) { c.style.transform = ''; });
                 document.querySelectorAll('.nav-link').forEach(a => {
                     a.classList.remove('bg-primary/10', 'text-primary');
                     a.classList.add('text-slate-600', 'dark:text-slate-400');
@@ -763,6 +808,25 @@
                 } else {
                     lastOutboundScroll = '';
                     showSection('outbound');
+                }
+            });
+        })();
+
+        (function() {
+            var btn = document.getElementById('warehouseNavToggle');
+            if (!btn) return;
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                var sub = document.getElementById('warehouseSubmenu');
+                var sectionInv = document.getElementById('section-inventory');
+                var sectionLog = document.getElementById('section-logistics');
+                var isWarehouseVisible = sectionInv && !sectionInv.classList.contains('hidden') || sectionLog && !sectionLog.classList.contains('hidden');
+                var chevrons = document.querySelectorAll('.warehouse-chevron');
+                if (isWarehouseVisible) {
+                    if (sub) sub.classList.toggle('hidden');
+                    if (chevrons.length) chevrons.forEach(function(c) { c.style.transform = (sub && sub.classList.contains('hidden')) ? '' : 'rotate(-180deg)'; });
+                } else {
+                    showSection('inventory');
                 }
             });
         })();
