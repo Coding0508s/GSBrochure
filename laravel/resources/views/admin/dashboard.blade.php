@@ -1203,7 +1203,7 @@
                     tbody.innerHTML = '<tr><td colspan="5" class="py-6 px-4 text-center text-slate-500 dark:text-slate-400">등록된 브로셔가 없습니다.</td></tr>';
                     return;
                 }
-                const sorted = brochures.slice().sort((a, b) => Math.max(b.stock || 0, b.stock_warehouse ?? 0) - Math.max(a.stock || 0, a.stock_warehouse ?? 0));
+                const sorted = brochures.slice().sort((a, b) => (a.id || 0) - (b.id || 0));
                 sorted.forEach(b => {
                     const warehouseStock = b.stock_warehouse ?? 0;
                     const hqStock = b.stock || 0;
@@ -1255,7 +1255,7 @@
                     await BrochureAPI.update(id, { name: name, stock: initialStock });
                     showAlert('브로셔가 수정되었습니다.');
                 } else {
-                    await BrochureAPI.create({ name: name, stock: initialStock });
+                    await BrochureAPI.create({ name: name, stock: 0, stock_warehouse: initialStock });
                     showAlert('브로셔가 추가되었습니다.');
                 }
                 await loadBrochures();
