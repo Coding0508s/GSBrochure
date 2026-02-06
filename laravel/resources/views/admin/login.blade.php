@@ -1,11 +1,11 @@
-@extends('layouts.shell')
+@extends('layouts.shell-no-sidebar')
 
 @section('title', '관리자 로그인')
 
 @section('sidebar-footer-label', '관리자 페이지')
 
 @section('content')
-    <div class="max-w-md mx-auto mt-10">
+    <div class="max-w-4xl mx-auto mt-10 w-1/4">
         <header class="mb-3 text-center">
             <h1 class="text-3xl font-bold text-primary dark:text-purple-400 mb-2">관리자 로그인</h1>
             <p class="text-gray-600 dark:text-gray-300">관리자 계정으로 로그인하세요.</p>

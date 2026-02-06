@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    /*
+    | Microsoft Teams Incoming Webhook (물류창고 담당자 채널 알림)
+    | 채널 설정 → 커넥터 → Incoming Webhook 에서 URL 복사 후 설정
+    */
+    'teams' => [
+        'webhook_url' => env('TEAMS_WEBHOOK_URL'),
+    ],
+
 ];

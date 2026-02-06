@@ -12,10 +12,10 @@
             <span class="material-icons text-xl">description</span>
             브로셔 신청
         </a>
-        <a href="{{ url('requestbrochure-list') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-all duration-200 shadow-sm hover:-translate-y-1 hover:shadow-lg">
+       <!--  <a href="{{ url('requestbrochure-list') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-all duration-200 shadow-sm hover:-translate-y-1 hover:shadow-lg">
             <span class="material-icons text-xl">history</span>
             브로셔 송장조회
-        </a>
+        </a> -->
         <a href="{{ url('admin/login') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-all duration-200 shadow-sm hover:-translate-y-1 hover:shadow-lg">
             <span class="material-icons text-xl">settings</span>
             관리자 페이지

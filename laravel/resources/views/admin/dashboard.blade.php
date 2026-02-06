@@ -1523,7 +1523,7 @@
         function logout() {
             sessionStorage.removeItem('admin_logged_in');
             sessionStorage.removeItem('admin_username');
-            window.location.href = '{{ url("admin/login") }}';
+            window.location.href = '{{ url("/") }}';
         }
 
         async function loadAdminUsers() {

@@ -9,6 +9,7 @@ use App\Models\RequestItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class RequestController extends Controller
 {
@@ -75,12 +76,96 @@ class RequestController extends Controller
                     'quantity' => $b['quantity'],
                 ]);
             }
+            $addedInvoiceNumbers = [];
             foreach ($invoices as $inv) {
                 if (trim($inv) !== '') {
-                    Invoice::create(['request_id' => $req->id, 'invoice_number' => trim($inv)]);
+                    $num = trim($inv);
+                    $addedInvoiceNumbers[] = $num;
+                    Invoice::create(['request_id' => $req->id, 'invoice_number' => $num]);
                 }
             }
             DB::commit();
+
+            $webhookUrl = config('services.teams.webhook_url');
+            if ($webhookUrl && $webhookUrl !== '') {
+                try {
+                    $items = $req->requestItems()->get();
+                    $brochureFacts = [];
+                    foreach ($items as $item) {
+                        $brochureFacts[] = [
+                            'name' => $item->brochure_name ?? '-',
+                            'value' => ($item->quantity ?? 0) . '권',
+                        ];
+                    }
+                    $logisticsUrl = url('requestbrochure-logistics');
+                    $payload = [
+                        '@type' => 'MessageCard',
+                        '@context' => 'http://schema.org/extensions',
+                        'themeColor' => '590091',
+                        'summary' => '브로셔 발송 요청 (물류창고)',
+                        'sections' => [
+                            [
+                                'markdown' => true,
+                                'activityTitle' => '**브로셔 발송 요청** (물류창고)',
+                                'facts' => [
+                                    ['name' => '담당자', 'value' => $req->contact_name ?? '-'],
+                                    ['name' => '기관명', 'value' => $req->schoolname ?? '-'],
+                                    ['name' => '연락처', 'value' => $req->phone ?? '-'],
+                                    ['name' => '주소', 'value' => $req->address ?? '-'],
+                                    ['name' => '신청일', 'value' => $req->date ?? '-'],
+                                    /* ['name' => '링크', 'value' => '[운송장 입력 페이지](' . $logisticsUrl . ')'], */
+                                ],
+                            ],
+                            [
+                                'activityTitle' => '**신청 브로셔**',
+                                'facts' => $brochureFacts,
+                            ],
+                        ],
+                        'potentialAction' => [
+                            [
+                                '@type' => 'OpenUri',
+                                'name' => '운송장 입력',
+                                'targets' => [
+                                    ['os' => 'default', 'uri' => $logisticsUrl],
+                                ],
+                            ],
+                        ],
+                    ];
+                    Http::timeout(5)->post($webhookUrl, $payload);
+
+                    // 신청 시 운송장 번호가 함께 입력된 경우 운송장 등록 완료 알림도 전송
+                    if (count($addedInvoiceNumbers) > 0) {
+                        $invoiceFacts = [];
+                        foreach ($addedInvoiceNumbers as $num) {
+                            $invoiceFacts[] = ['name' => '운송장 번호', 'value' => $num];
+                        }
+                        $invoicePayload = [
+                            '@type' => 'MessageCard',
+                            '@context' => 'http://schema.org/extensions',
+                            'themeColor' => '28a745',
+                            'summary' => '운송장 등록 완료 (물류창고)',
+                            'sections' => [
+                                [
+                                    'activityTitle' => '**운송장 등록 완료** (물류창고)',
+                                    'facts' => [
+                                        ['name' => '담당자', 'value' => $req->contact_name ?? '-'],
+                                        ['name' => '기관명', 'value' => $req->schoolname ?? '-'],
+                                        ['name' => '신청일', 'value' => $req->date ?? '-'],
+                                    ],
+                                ],
+                                [
+                                    'activityTitle' => '**등록된 운송장 번호**',
+                                    'facts' => $invoiceFacts,
+                                ],
+                            ],
+                        ];
+                        Http::timeout(5)->post($webhookUrl, $invoicePayload);
+                    }
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
+
             return response()->json(['id' => $req->id]);
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -140,12 +225,49 @@ class RequestController extends Controller
     public function addInvoices(Request $request, string $id): JsonResponse
     {
         $data = $request->validate(['invoices' => 'required|array', 'invoices.*' => 'string']);
-        BrochureRequest::findOrFail($id);
+        $req = BrochureRequest::findOrFail($id);
+        $addedNumbers = [];
         foreach ($data['invoices'] as $inv) {
             if (trim($inv) !== '') {
-                Invoice::create(['request_id' => $id, 'invoice_number' => trim($inv)]);
+                $num = trim($inv);
+                $addedNumbers[] = $num;
+                Invoice::create(['request_id' => $id, 'invoice_number' => $num]);
             }
         }
+
+        $webhookUrl = config('services.teams.webhook_url');
+        if ($webhookUrl && $webhookUrl !== '' && count($addedNumbers) > 0) {
+            try {
+                $invoiceFacts = [];
+                foreach ($addedNumbers as $num) {
+                    $invoiceFacts[] = ['name' => '운송장 번호', 'value' => $num];
+                }
+                $payload = [
+                    '@type' => 'MessageCard',
+                    '@context' => 'http://schema.org/extensions',
+                    'themeColor' => '28a745',
+                    'summary' => '운송장 등록 완료 (물류창고)',
+                    'sections' => [
+                        [
+                            'activityTitle' => '**운송장 등록 완료** (물류창고)',
+                            'facts' => [
+                                ['name' => '담당자', 'value' => $req->contact_name ?? '-'],
+                                ['name' => '기관명', 'value' => $req->schoolname ?? '-'],
+                                ['name' => '신청일', 'value' => $req->date ?? '-'],
+                            ],
+                        ],
+                        [
+                            'activityTitle' => '**등록된 운송장 번호**',
+                            'facts' => $invoiceFacts,
+                        ],
+                    ],
+                ];
+                Http::timeout(5)->post($webhookUrl, $payload);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
         return response()->json(['success' => true]);
     }
 
