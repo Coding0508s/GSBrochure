@@ -38,12 +38,48 @@ class BrochureController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $request->validate(['name' => 'required|string', 'stock' => 'sometimes|integer', 'stock_warehouse' => 'sometimes|integer']);
-        $name = $request->input('name');
+        $request->validate([
+            'name' => 'required|string|unique:brochures,name',
+            'stock' => 'sometimes|integer',
+            'stock_warehouse' => 'sometimes|integer',
+        ], [
+            'name.unique' => '이미 같은 이름의 브로셔가 있습니다. 다른 이름을 입력해 주세요.',
+        ]);
+        $name = trim((string) $request->input('name'));
         $stock = (int) $request->input('stock', 0);
         $stockWarehouse = (int) $request->input('stock_warehouse', 0);
-        $brochure = Brochure::create(['name' => $name, 'stock' => $stock, 'stock_warehouse' => $stockWarehouse]);
-        return response()->json(['id' => $brochure->id, 'name' => $name, 'stock' => $brochure->stock]);
+        try {
+            $brochure = Brochure::create(['name' => $name, 'stock' => $stock, 'stock_warehouse' => $stockWarehouse]);
+            $date = now()->format('Y-m-d');
+            $base = [
+                'brochure_id' => $brochure->id,
+                'brochure_name' => $name,
+                'date' => $date,
+                'contact_name' => '',
+                'schoolname' => '',
+                'memo' => null,
+            ];
+            StockHistory::create(array_merge($base, [
+                'type' => '등록',
+                'location' => 'warehouse',
+                'quantity' => $stockWarehouse,
+                'before_stock' => 0,
+                'after_stock' => $stockWarehouse,
+            ]));
+            StockHistory::create(array_merge($base, [
+                'type' => '등록',
+                'location' => 'hq',
+                'quantity' => $stock,
+                'before_stock' => 0,
+                'after_stock' => $stock,
+            ]));
+            return response()->json(['id' => $brochure->id, 'name' => $name, 'stock' => $brochure->stock]);
+        } catch (\Throwable $e) {
+            \Log::error('Brochure store error: ' . $e->getMessage(), ['exception' => $e]);
+            return response()->json([
+                'error' => $e->getMessage() ?: '브로셔 저장 중 오류가 발생했습니다.',
+            ], 500);
+        }
     }
 
     public function update(Request $request, string $id): JsonResponse
@@ -57,7 +93,18 @@ class BrochureController extends Controller
 
     public function destroy(string $id): JsonResponse
     {
-        Brochure::findOrFail($id)->delete();
+        $brochure = Brochure::findOrFail($id);
+        StockHistory::where('brochure_id', $id)->delete();
+        try {
+            $brochure->delete();
+        } catch (\Throwable $e) {
+            if (str_contains($e->getMessage(), 'foreign key') || $e->getCode() === '23000') {
+                return response()->json([
+                    'error' => '이 브로셔는 발송 내역이 있어 삭제할 수 없습니다.',
+                ], 422);
+            }
+            throw $e;
+        }
         return response()->json(['success' => true]);
     }
 

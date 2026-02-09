@@ -8,8 +8,8 @@ const API_BASE_URL = typeof window !== 'undefined' && window.API_BASE_URL
         return (window.location.origin || 'http://localhost:8000') + '/api';
     })();
 
-async function apiCall(endpoint, method = 'GET', data = null) {
-    const options = { method, headers: { 'Content-Type': 'application/json' } };
+async function apiCall(endpoint, method = 'GET', data = null, fetchOpts = {}) {
+    const options = { ...fetchOpts, method, headers: { 'Content-Type': 'application/json', ...(fetchOpts.headers || {}) } };
     if (data && (method === 'POST' || method === 'PUT')) options.body = JSON.stringify(data);
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
@@ -20,6 +20,11 @@ async function apiCall(endpoint, method = 'GET', data = null) {
                 if (ct && ct.includes('application/json')) {
                     const err = await response.json();
                     errorMessage = err.error || errorMessage;
+                    if (errorMessage === `HTTP error! status: ${response.status}` && err.errors && typeof err.errors === 'object') {
+                        const keys = Object.keys(err.errors);
+                        if (keys.length && err.errors[keys[0]] && err.errors[keys[0]][0]) errorMessage = err.errors[keys[0]][0];
+                    }
+                    if (errorMessage === `HTTP error! status: ${response.status}` && err.message) errorMessage = err.message;
                 } else errorMessage = (await response.text()) || errorMessage;
             } catch (_) {}
             if (response.status === 401) errorMessage = '인증 실패: 아이디 또는 비밀번호가 올바르지 않습니다.';
@@ -33,7 +38,7 @@ async function apiCall(endpoint, method = 'GET', data = null) {
 }
 
 const BrochureAPI = {
-    getAll: () => apiCall('/brochures'),
+    getAll: () => apiCall('/brochures?_=' + Date.now(), 'GET', null, { cache: 'no-store' }),
     create: (data) => apiCall('/brochures', 'POST', data),
     update: (id, data) => apiCall(`/brochures/${id}`, 'PUT', data),
     delete: (id) => apiCall(`/brochures/${id}`, 'DELETE'),

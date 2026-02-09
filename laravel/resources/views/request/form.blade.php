@@ -53,12 +53,22 @@
 
     async function loadBrochureOptions() {
         try {
-            const brochures = await BrochureAPI.getAll();
-            return brochures.map(b => ({
-                value: b.id,
-                text: b.name,
-                stock_warehouse: b.stock_warehouse ?? 0
-            }));
+            const raw = await BrochureAPI.getAll();
+            const list = Array.isArray(raw)
+                ? raw
+                : (raw && Array.isArray(raw.data) ? raw.data : (raw && Array.isArray(raw.brochures) ? raw.brochures : []));
+            const options = list
+                .filter(b => b != null && typeof b === 'object')
+                .map(b => {
+                    const id = b.id !== undefined && b.id !== null ? Number(b.id) : NaN;
+                    const name = b.name !== undefined && b.name !== null ? String(b.name).trim() : '';
+                    const stockWarehouse = Number(b.stock_warehouse) || 0;
+                    return { value: id, text: name, stock_warehouse: stockWarehouse };
+                })
+                .filter(opt => !Number.isNaN(opt.value));
+            const byId = new Map();
+            options.forEach(opt => { if (!byId.has(opt.value)) byId.set(opt.value, opt); });
+            return Array.from(byId.values()).sort((a, b) => a.value - b.value);
         } catch (error) {
             console.error('브로셔 옵션 로드 오류:', error);
             return [];
@@ -256,45 +266,15 @@
         if (row) row.remove();
     }
 
-    async function addBrochureItem(rowId, isDefault = false) {
-        const container = document.getElementById(`brochure-container-${rowId}`);
-        if (!container) return;
+    const MIN_STOCK_FOR_DISPLAY = 100;
 
-        const brochureCount = container.querySelectorAll('.brochure-item').length;
-        const itemId = `brochure-${rowId}-${brochureCount + 1}`;
-
-        const brochureOptions = await loadBrochureOptions();
-        const MIN_STOCK_FOR_DISPLAY = 100;
-
-        const brochureItem = document.createElement('div');
-        brochureItem.className = 'brochure-item flex flex-wrap items-end gap-4 p-4 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800/50';
-        brochureItem.id = `brochure-item-${itemId}`;
-
-        const selectCell = document.createElement('div');
-        selectCell.className = 'flex-1 min-w-[200px] space-y-2 relative';
-        const label = document.createElement('label');
-        label.className = 'block text-sm font-medium text-gray-700 dark:text-gray-300';
-        label.setAttribute('for', itemId);
-        label.textContent = '브로셔';
-        const wrapper = document.createElement('div');
-        wrapper.className = 'brochure-select-wrapper relative';
-        wrapper.dataset.selectedName = '';
-        const hiddenInput = document.createElement('input');
-        hiddenInput.type = 'hidden';
-        hiddenInput.id = itemId;
-        hiddenInput.name = itemId;
-        hiddenInput.required = true;
-        const trigger = document.createElement('div');
-        trigger.className = 'brochure-select-trigger block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2.5 px-3 text-left text-sm dark:text-white cursor-pointer focus:ring-2 focus:ring-primary focus:border-primary';
-        trigger.textContent = '선택하세요';
-        const dropdown = document.createElement('div');
-        dropdown.className = 'brochure-select-dropdown absolute left-0 right-0 top-full mt-1 z-50 hidden max-h-60 overflow-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg';
-
-        brochureOptions.forEach(option => {
-            const stock = option.stock_warehouse ?? 0;
+    function fillBrochureDropdownOptions(dropdown, hiddenInput, wrapper, trigger, brochureOptions) {
+        dropdown.innerHTML = '';
+        (brochureOptions || []).forEach(option => {
+            const stock = Number(option.stock_warehouse) || 0;
             const canOrder = stock >= MIN_STOCK_FOR_DISPLAY;
             const statusText = canOrder ? '신청 가능' : '신청 불가';
-            const fullText = `${option.text} (${statusText})`;
+            const fullText = `${option.text || ''} (${statusText})`;
             const optEl = document.createElement('div');
             optEl.className = 'brochure-option px-3 py-2 text-sm dark:text-white cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700' + (canOrder ? '' : ' opacity-70 cursor-not-allowed');
             optEl.textContent = fullText;
@@ -323,10 +303,71 @@
             }
             dropdown.appendChild(optEl);
         });
+    }
 
-        trigger.addEventListener('click', function (e) {
+    async function addBrochureItem(rowId, isDefault = false) {
+        const container = document.getElementById(`brochure-container-${rowId}`);
+        if (!container) return;
+
+        const brochureCount = container.querySelectorAll('.brochure-item').length;
+        const itemId = `brochure-${rowId}-${brochureCount + 1}`;
+
+        const brochureOptions = await loadBrochureOptions();
+
+        const brochureItem = document.createElement('div');
+        brochureItem.className = 'brochure-item flex flex-wrap items-end gap-4 p-4 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800/50';
+        brochureItem.id = `brochure-item-${itemId}`;
+
+        const selectCell = document.createElement('div');
+        selectCell.className = 'flex-1 min-w-[200px] space-y-2 relative';
+        const label = document.createElement('label');
+        label.className = 'block text-sm font-medium text-gray-700 dark:text-gray-300';
+        label.setAttribute('for', itemId);
+        label.textContent = '브로셔';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'brochure-select-wrapper relative';
+        wrapper.dataset.selectedName = '';
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.id = itemId;
+        hiddenInput.name = itemId;
+        hiddenInput.required = true;
+        const trigger = document.createElement('div');
+        trigger.className = 'brochure-select-trigger block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2.5 px-3 text-left text-sm dark:text-white cursor-pointer focus:ring-2 focus:ring-primary focus:border-primary';
+        trigger.textContent = '선택하세요';
+        const dropdown = document.createElement('div');
+        dropdown.className = 'brochure-select-dropdown absolute left-0 right-0 top-full mt-1 z-50 hidden max-h-60 overflow-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg';
+
+        function positionDropdownFixed() {
+            const rect = trigger.getBoundingClientRect();
+            dropdown.style.position = 'fixed';
+            dropdown.style.left = rect.left + 'px';
+            dropdown.style.top = (rect.bottom + 4) + 'px';
+            dropdown.style.minWidth = rect.width + 'px';
+            dropdown.style.right = 'auto';
+        }
+
+        fillBrochureDropdownOptions(dropdown, hiddenInput, wrapper, trigger, brochureOptions);
+
+        trigger.addEventListener('click', async function (e) {
             e.stopPropagation();
-            dropdown.classList.toggle('hidden');
+            const wasHidden = dropdown.classList.contains('hidden');
+            if (wasHidden) {
+                try {
+                    const opts = await loadBrochureOptions();
+                    fillBrochureDropdownOptions(dropdown, hiddenInput, wrapper, trigger, opts);
+                    requestAnimationFrame(function () {
+                        positionDropdownFixed();
+                        dropdown.classList.remove('hidden');
+                    });
+                } catch (err) {
+                    console.error('브로셔 목록 새로고침 오류:', err);
+                    positionDropdownFixed();
+                    dropdown.classList.remove('hidden');
+                }
+            } else {
+                dropdown.classList.add('hidden');
+            }
         });
         document.addEventListener('click', function closeDropdown(e) {
             if (!wrapper.contains(e.target)) dropdown.classList.add('hidden');
