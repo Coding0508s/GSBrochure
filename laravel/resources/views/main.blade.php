@@ -7,7 +7,7 @@
         <header class="mb-8 opacity-0 animate-fade-in-up">
             <h1 class="text-4xl font-bold text-primary dark:text-purple-400 mb-2">GrapeSEED Brochure</h1>
             <h2 class="text-2xl font-bold text-primary dark:text-purple-400 mb-2">Management System</h2>
-            <p class="text-gray-600 dark:text-gray-300 mb-8">원하시는 아래의 메뉴를 클릭하세요.</p>
+            <p class="text-gray-600 dark:text-gray-300 mb-2">원하시는 서비스를 선택해 주세요.</p>
         </header>
         <div class="opacity-0 animate-fade-in-up-delay flex flex-wrap justify-center gap-4">
             <a href="{{ url('requestbrochure') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-all duration-200 shadow-sm hover:-translate-y-1 hover:shadow-lg">
