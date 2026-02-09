@@ -184,7 +184,7 @@
                     <h2 class="text-xl font-bold text-slate-900 dark:text-white">물류센터 브로셔 관리</h2>
                     <div class="flex gap-2">
                         <button type="button" onclick="showSection('outbound'); downloadStockHistoryAll();" class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">입출고 내역 다운로드</button>
-                        <button type="button" onclick="openBrochureModal()" class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg text-sm font-medium text-white transition-colors">
+                        <button type="button" onclick="openBrochureModal(null, 'warehouse')" class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg text-sm font-medium text-white transition-colors">
                             <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
                             브로셔 추가
                         </button>
@@ -215,7 +215,7 @@
                     <h2 class="text-xl font-bold text-slate-900 dark:text-white">본사 브로셔 관리</h2>
                     <div class="flex gap-2">
                         <button type="button" onclick="showSection('outbound'); downloadStockHistoryAll();" class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">입출고 내역 다운로드</button>
-                        <button type="button" onclick="openBrochureModal()" class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg text-sm font-medium text-white transition-colors">
+                        <button type="button" disabled class="flex items-center gap-2 px-4 py-2 bg-primary/60 rounded-lg text-sm font-medium text-white/80 cursor-not-allowed transition-colors" title="본사에서는 물류센터에서만 브로셔를 추가할 수 있습니다">
                             <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
                             브로셔 추가
                         </button>
@@ -1278,7 +1278,7 @@
             } catch (err) { console.error(err); }
         }
 
-        async function openBrochureModal(id) {
+        async function openBrochureModal(id, addLocation) {
             var modal = document.getElementById('brochureModal');
             var form = document.getElementById('brochureForm');
             var title = document.getElementById('brochureModalTitle');
@@ -1294,11 +1294,13 @@
                         stockGroup.classList.add('hidden');
                     }
                 } catch (e) { showAlert('브로셔 정보를 불러오는 중 오류가 발생했습니다.', 'danger'); return; }
+                form.removeAttribute('data-brochure-add-location');
             } else {
                 form.reset();
                 document.getElementById('brochureId').value = '';
                 title.textContent = '브로셔 추가';
                 stockGroup.classList.remove('hidden');
+                form.dataset.brochureAddLocation = addLocation === 'hq' ? 'hq' : 'warehouse';
             }
             modal.classList.remove('hidden');
         }
@@ -1316,7 +1318,12 @@
                     await BrochureAPI.update(id, { name: name, stock: initialStock });
                     showAlert('브로셔가 수정되었습니다.');
                 } else {
-                    await BrochureAPI.create({ name: name, stock: 0, stock_warehouse: initialStock });
+                    var addLocation = document.getElementById('brochureForm').dataset.brochureAddLocation || 'warehouse';
+                    if (addLocation === 'hq') {
+                        await BrochureAPI.create({ name: name, stock: initialStock, stock_warehouse: 0 });
+                    } else {
+                        await BrochureAPI.create({ name: name, stock: 0, stock_warehouse: initialStock });
+                    }
                     showAlert('브로셔가 추가되었습니다.');
                 }
                 await loadBrochures();
