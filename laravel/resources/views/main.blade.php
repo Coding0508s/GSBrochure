@@ -4,7 +4,8 @@
 
 @section('content')
     <header class="mb-2 max-w-5xl mx-auto opacity-0 animate-fade-in-up">
-        <h1 class="text-3xl font-bold text-primary dark:text-purple-400 mb-2">GrapeSEED Brochure Main Page</h1>
+        <h1 class="text-4xl font-bold text-primary dark:text-purple-400 mb-2">GrapeSEED Brochure</h1>
+        <h2 class="text-2xl font-bold text-primary dark:text-purple-400 mb-2 text-center">Management System</h2>
         <p class="text-gray-600 dark:text-gray-300 mb-8 text-center">원하시는 아래의 메뉴를 클릭하세요.</p>
     </header>
     <div class="max-w-5xl mx-auto flex flex-col sm:flex-row flex-wrap gap-4 opacity-0 animate-fade-in-up-delay">

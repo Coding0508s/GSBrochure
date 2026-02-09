@@ -11,6 +11,7 @@
     </header>
 
     <div id="alert" class="max-w-5xl mx-auto mb-6 hidden rounded-lg border p-4" role="alert"></div>
+    <div id="cursor-tooltip" role="tooltip" class="fixed z-[9999] pointer-events-none hidden px-3 py-2 text-sm text-white bg-gray-800 dark:bg-gray-700 rounded-lg shadow-lg whitespace-nowrap" style="left:0;top:0;"></div>
 
     <form id="brochureForm" class="max-w-5xl mx-auto space-y-8">
         <!-- 신청자 정보 (공통) -->
@@ -53,7 +54,11 @@
     async function loadBrochureOptions() {
         try {
             const brochures = await BrochureAPI.getAll();
-            return brochures.map(b => ({ value: b.id, text: b.name }));
+            return brochures.map(b => ({
+                value: b.id,
+                text: b.name,
+                stock_warehouse: b.stock_warehouse ?? 0
+            }));
         } catch (error) {
             console.error('브로셔 옵션 로드 오류:', error);
             return [];
@@ -68,6 +73,52 @@
             console.error('담당자 옵션 로드 오류:', error);
             return [];
         }
+    }
+
+    const TOOLTIP_OFFSET = 14;
+    function getCursorTooltipEl() {
+        let el = document.getElementById('cursor-tooltip');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'cursor-tooltip';
+            el.setAttribute('role', 'tooltip');
+            el.className = 'fixed z-[9999] pointer-events-none hidden px-3 py-2 text-sm text-white bg-gray-800 dark:bg-gray-700 rounded-lg shadow-lg whitespace-nowrap';
+            el.style.left = '0'; el.style.top = '0';
+            document.body.appendChild(el);
+        }
+        return el;
+    }
+    function showCursorTooltip(text, x, y) {
+        const el = getCursorTooltipEl();
+        el.textContent = text;
+        el.style.left = (x + TOOLTIP_OFFSET) + 'px';
+        el.style.top = (y + TOOLTIP_OFFSET) + 'px';
+        el.classList.remove('hidden');
+    }
+    function moveCursorTooltip(x, y) {
+        const el = getCursorTooltipEl();
+        el.style.left = (x + TOOLTIP_OFFSET) + 'px';
+        el.style.top = (y + TOOLTIP_OFFSET) + 'px';
+    }
+    function hideCursorTooltip() {
+        const el = document.getElementById('cursor-tooltip');
+        if (el) { el.classList.add('hidden'); }
+    }
+
+    function attachBrochureSelectBehavior(select) {
+        if (!select) return;
+        select.addEventListener('focus', function () {
+            [].slice.call(select.options).forEach(opt => {
+                const ft = opt.getAttribute('data-fulltext');
+                if (ft) opt.textContent = ft;
+            });
+        });
+        function showSelectedNameOnly() {
+            const opt = select.options[select.selectedIndex];
+            if (opt && opt.getAttribute('data-name')) opt.textContent = opt.getAttribute('data-name');
+        }
+        select.addEventListener('change', showSelectedNameOnly);
+        select.addEventListener('blur', showSelectedNameOnly);
     }
 
     async function deductBrochureStock(brochures, contactName, schoolname, date) {
@@ -128,12 +179,6 @@
     async function addRow() {
         rowCount++;
         const rowsContainer = document.getElementById('rowsContainer');
-        const brochureOptions = await loadBrochureOptions();
-        let brochureOptionsHtml = '<option value="">선택하세요</option>';
-        brochureOptions.forEach(option => {
-            brochureOptionsHtml += `<option value="${option.value}">${option.text}</option>`;
-        });
-
         const rowDiv = document.createElement('div');
         rowDiv.className = 'bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden';
         rowDiv.id = `row-${rowCount}`;
@@ -184,7 +229,7 @@
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
                     <span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold">3</span>
                     브로셔 선택 (Brochure Selection)
-                </h2>
+                </h2><p class="text-sm text-gray-600 dark:text-gray-400 mb-4 text-red-500">잔여 재고가 100권 이하인 브로셔는 신청이 제한됩니다.</p>
                 <div class="space-y-4">
                     <div id="brochure-container-${rowCount}" class="space-y-4"></div>
                     <button type="button" class="flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-secondary text-secondary font-medium rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors text-sm" onclick="addBrochureItem(${rowCount})">
@@ -219,27 +264,97 @@
         const itemId = `brochure-${rowId}-${brochureCount + 1}`;
 
         const brochureOptions = await loadBrochureOptions();
-        let brochureOptionsHtml = '<option value="">선택하세요</option>';
-        brochureOptions.forEach(option => {
-            brochureOptionsHtml += `<option value="${option.value}">${option.text}</option>`;
-        });
+        const MIN_STOCK_FOR_DISPLAY = 100;
 
         const brochureItem = document.createElement('div');
         brochureItem.className = 'brochure-item flex flex-wrap items-end gap-4 p-4 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800/50';
         brochureItem.id = `brochure-item-${itemId}`;
 
-        brochureItem.innerHTML = `
-            <div class="flex-1 min-w-[200px] space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="${itemId}">브로셔</label>
-                <select id="${itemId}" name="${itemId}" required class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5">${brochureOptionsHtml}</select>
-            </div>
-            <div class="w-full sm:w-32 space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="quantity-${itemId}">수량</label>
-                <input type="number" id="quantity-${itemId}" name="quantity-${itemId}" min="1" placeholder="수량" required class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5">
-            </div>
-            ${!isDefault ? `<button type="button" class="px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg" onclick="removeBrochureItem('${itemId}')">삭제</button>` : ''}
+        const selectCell = document.createElement('div');
+        selectCell.className = 'flex-1 min-w-[200px] space-y-2 relative';
+        const label = document.createElement('label');
+        label.className = 'block text-sm font-medium text-gray-700 dark:text-gray-300';
+        label.setAttribute('for', itemId);
+        label.textContent = '브로셔';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'brochure-select-wrapper relative';
+        wrapper.dataset.selectedName = '';
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.id = itemId;
+        hiddenInput.name = itemId;
+        hiddenInput.required = true;
+        const trigger = document.createElement('div');
+        trigger.className = 'brochure-select-trigger block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2.5 px-3 text-left text-sm dark:text-white cursor-pointer focus:ring-2 focus:ring-primary focus:border-primary';
+        trigger.textContent = '선택하세요';
+        const dropdown = document.createElement('div');
+        dropdown.className = 'brochure-select-dropdown absolute left-0 right-0 top-full mt-1 z-50 hidden max-h-60 overflow-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg';
+
+        brochureOptions.forEach(option => {
+            const stock = option.stock_warehouse ?? 0;
+            const canOrder = stock >= MIN_STOCK_FOR_DISPLAY;
+            const statusText = canOrder ? '신청 가능' : '신청 불가';
+            const fullText = `${option.text} (${statusText})`;
+            const optEl = document.createElement('div');
+            optEl.className = 'brochure-option px-3 py-2 text-sm dark:text-white cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700' + (canOrder ? '' : ' opacity-70 cursor-not-allowed');
+            optEl.textContent = fullText;
+            optEl.dataset.value = String(option.value);
+            optEl.dataset.name = option.text || '';
+            if (!canOrder) {
+                optEl.dataset.stock = String(stock);
+                optEl.dataset.disabled = '1';
+                optEl.addEventListener('mouseenter', function (e) {
+                    showCursorTooltip(`현재 재고가 ${stock}권이라 신청할 수 없습니다`, e.clientX, e.clientY);
+                });
+                optEl.addEventListener('mousemove', function (e) {
+                    moveCursorTooltip(e.clientX, e.clientY);
+                });
+                optEl.addEventListener('mouseleave', function () {
+                    hideCursorTooltip();
+                });
+            } else {
+                optEl.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    hiddenInput.value = optEl.dataset.value;
+                    wrapper.dataset.selectedName = optEl.dataset.name;
+                    trigger.textContent = optEl.dataset.name;
+                    dropdown.classList.add('hidden');
+                });
+            }
+            dropdown.appendChild(optEl);
+        });
+
+        trigger.addEventListener('click', function (e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('hidden');
+        });
+        document.addEventListener('click', function closeDropdown(e) {
+            if (!wrapper.contains(e.target)) dropdown.classList.add('hidden');
+        });
+
+        wrapper.appendChild(hiddenInput);
+        wrapper.appendChild(trigger);
+        wrapper.appendChild(dropdown);
+        selectCell.appendChild(label);
+        selectCell.appendChild(wrapper);
+
+        const qtyCell = document.createElement('div');
+        qtyCell.className = 'w-full sm:w-32 space-y-2';
+        qtyCell.innerHTML = `
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="quantity-${itemId}">수량</label>
+            <input type="number" id="quantity-${itemId}" name="quantity-${itemId}" min="1" placeholder="수량" required class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5">
         `;
 
+        brochureItem.appendChild(selectCell);
+        brochureItem.appendChild(qtyCell);
+        if (!isDefault) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg';
+            btn.textContent = '삭제';
+            btn.onclick = () => removeBrochureItem(itemId);
+            brochureItem.appendChild(btn);
+        }
         container.appendChild(brochureItem);
     }
 
@@ -253,14 +368,17 @@
         if (!container) return [];
         const items = [];
         container.querySelectorAll('.brochure-item').forEach(item => {
-            const select = item.querySelector('select');
+            const wrapper = item.querySelector('.brochure-select-wrapper');
             const input = item.querySelector('input[type="number"]');
-            if (select && input && select.value && input.value) {
-                items.push({
-                    brochure: select.value,
-                    brochureName: select.options[select.selectedIndex].text,
-                    quantity: parseInt(input.value)
-                });
+            if (wrapper && input) {
+                const valueInput = wrapper.querySelector('input[type="hidden"]');
+                if (valueInput && valueInput.value && input.value) {
+                    items.push({
+                        brochure: valueInput.value,
+                        brochureName: wrapper.dataset.selectedName || '',
+                        quantity: parseInt(input.value)
+                    });
+                }
             }
         });
         return items;
