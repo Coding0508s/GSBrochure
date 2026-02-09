@@ -13,15 +13,15 @@
 
         <div id="alert" class="mb-6 hidden rounded-lg border p-4 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200" role="alert"></div>
 
-        <form id="loginForm" class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6 space-y-5">
+        <form id="loginForm" class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6 space-y-5" autocomplete="off">
             <div class="space-y-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="username">아이디</label>
-                <input type="text" id="username" name="username" required autofocus
+                <input type="text" id="username" name="username" required autofocus autocomplete="off"
                     class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5">
             </div>
             <div class="space-y-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="password">비밀번호</label>
-                <input type="password" id="password" name="password" required
+                <input type="password" id="password" name="password" required autocomplete="off"
                     class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5">
             </div>
             <button type="submit" class="w-full px-6 py-3 bg-primary hover:bg-purple-800 text-white font-semibold rounded-lg transition-colors">
