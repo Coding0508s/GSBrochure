@@ -97,7 +97,7 @@
         </aside> -->
 
 
-        <main class="flex-1 p-3 md:p-10 lg:p-12 flex flex-col items-center justify-center mx-auto w-full">
+        <main class="flex-1 min-h-screen p-3 md:p-10 lg:p-12 flex flex-col items-center justify-center mx-auto w-full">
             @yield('content')
         </main>
     </div>

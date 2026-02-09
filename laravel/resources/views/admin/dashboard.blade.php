@@ -396,7 +396,6 @@
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">ID</th>
                                         <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">담당자명</th>
                                         <th class="text-center py-3 px-4 font-medium text-slate-700 dark:text-slate-300">작업</th>
                                     </tr>
@@ -963,7 +962,7 @@
                 contacts.forEach(contact => {
                     const row = document.createElement('tr');
                     row.className = 'border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50';
-                    row.innerHTML = '<td class="py-3 px-4">' + contact.id + '</td><td class="py-3 px-4">' + (contact.name || '') + '</td><td class="py-3 px-4 text-center"><button type="button" onclick="editContact(\'' + contact.id + '\')" class="px-2 py-1 rounded bg-primary text-white text-xs font-medium hover:bg-primary/90 mr-1">수정</button><button type="button" onclick="deleteContact(\'' + contact.id + '\')" class="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700">삭제</button></td>';
+                    row.innerHTML = '<td class="py-3 px-4">' + (contact.name || '') + '</td><td class="py-3 px-4 text-center"><button type="button" onclick="editContact(\'' + contact.id + '\')" class="px-2 py-1 rounded bg-primary text-white text-xs font-medium hover:bg-primary/90 mr-1">수정</button><button type="button" onclick="deleteContact(\'' + contact.id + '\')" class="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700">삭제</button></td>';
                     tbody.appendChild(row);
                 });
             } catch (err) {
