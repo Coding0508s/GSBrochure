@@ -130,7 +130,7 @@
         </div>
 
         <!-- Main Content -->
-        <div class="flex-1 flex flex-col h-full overflow-y-auto">
+        <div class="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-auto min-w-0">
             <header class="w-full px-4 sm:px-8 py-4 sm:py-6 flex flex-wrap justify-between items-end gap-4 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#1e1e1e]/80 sticky top-0 z-10">
                 <div class="flex flex-col gap-1">
                     <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white" id="pageTitle">대시보드</h1>
@@ -141,16 +141,16 @@
             <div id="alert" class="mx-4 sm:mx-8 mt-4 hidden rounded-lg px-4 py-3 text-sm" role="alert"></div>
 
             <!-- Dashboard Section -->
-            <section id="section-dashboard" class="content-section px-4 sm:px-8 py-4 sm:py-6 flex flex-col gap-6">
+            <section id="section-dashboard" class="content-section px-4 sm:px-8 py-4 sm:py-6 flex flex-col gap-6 min-w-0">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="statsGrid">
                     <!-- 동적 통계 카드 -->
                 </div>
-                <div class="flex flex-col lg:flex-row gap-6 flex-1">
-                    <div class="flex-[2] bg-white dark:bg-[#1e1e1e] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+                <div class="flex flex-col lg:flex-row gap-6 flex-1 min-w-0">
+                    <div class="flex-[2] min-w-0 bg-white dark:bg-[#1e1e1e] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
                         <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">재고 추이</h3>
                         <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">품목별 재고 현황</p>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm">
+                        <div class="overflow-x-auto -mx-px">
+                            <table class="w-full text-sm min-w-[480px]">
                                 <thead>
                                     <tr class="border-b border-slate-200 dark:border-slate-700">
                                         <th class="text-left py-2 px-3 text-slate-600 dark:text-slate-400 font-medium">브로셔명</th>
@@ -179,20 +179,20 @@
             </section>
 
             <!-- Inventory Section -->
-            <section id="section-inventory" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden">
-                <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
-                    <h2 class="text-xl font-bold text-slate-900 dark:text-white">물류센터 브로셔 관리</h2>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="showSection('outbound'); downloadStockHistoryAll();" class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">입출고 내역 다운로드</button>
-                        <button type="button" onclick="openBrochureModal(null, 'warehouse')" class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg text-sm font-medium text-white transition-colors">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+            <section id="section-inventory" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden min-w-0">
+                <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:flex-wrap sm:justify-between sm:items-center">
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white shrink-0">물류센터 브로셔 관리</h2>
+                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                        <button type="button" onclick="showSection('outbound'); downloadStockHistoryAll();" class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex-1 sm:flex-none min-w-0">입출고 내역 다운로드</button>
+                        <button type="button" onclick="openBrochureModal(null, 'warehouse')" class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg text-sm font-medium text-white transition-colors flex-1 sm:flex-none min-w-0">
+                            <span class="material-symbols-outlined shrink-0" style="font-size: 18px;">add</span>
                             브로셔 추가
                         </button>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
+                <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm min-w-0">
+                    <div class="overflow-x-auto w-full rounded-b-xl" style="max-width: 100%;">
+                        <table class="w-full text-sm min-w-[600px]">
                             <thead>
                                 <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                                     <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">브로셔명</th>
@@ -210,20 +210,20 @@
             </section>
 
             <!-- Inventory Section 2 (복제) -->
-            <section id="section-inventory2" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden">
-                <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
-                    <h2 class="text-xl font-bold text-slate-900 dark:text-white">본사 브로셔 관리</h2>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="showSection('outbound'); downloadStockHistoryAll();" class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">입출고 내역 다운로드</button>
-                        <button type="button" disabled class="flex items-center gap-2 px-4 py-2 bg-primary/60 rounded-lg text-sm font-medium text-white/80 cursor-not-allowed transition-colors" title="본사에서는 물류센터에서만 브로셔를 추가할 수 있습니다">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+            <section id="section-inventory2" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden min-w-0">
+                <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:flex-wrap sm:justify-between sm:items-center">
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white shrink-0">본사 브로셔 관리</h2>
+                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                        <button type="button" onclick="showSection('outbound'); downloadStockHistoryAll();" class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex-1 sm:flex-none min-w-0">입출고 내역 다운로드</button>
+                        <button type="button" disabled class="flex items-center gap-2 px-4 py-2 bg-primary/60 rounded-lg text-sm font-medium text-white/80 cursor-not-allowed transition-colors flex-1 sm:flex-none min-w-0" title="본사에서는 물류센터에서만 브로셔를 추가할 수 있습니다">
+                            <span class="material-symbols-outlined shrink-0" style="font-size: 18px;">add</span>
                             브로셔 추가
                         </button>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
+                <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm min-w-0">
+                    <div class="overflow-x-auto w-full rounded-b-xl" style="max-width: 100%;">
+                        <table class="w-full text-sm min-w-[600px]">
                             <thead>
                                 <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                                     <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">브로셔명</th>
@@ -241,20 +241,20 @@
             </section>
 
             <!-- 입출고 내역 (통합) -->
-            <section id="section-outbound" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden">
-                <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
-                    <div>
+            <section id="section-outbound" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden min-w-0">
+                <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:flex-wrap sm:justify-between sm:items-start">
+                    <div class="min-w-0">
                         <h2 class="text-xl font-bold text-slate-900 dark:text-white">입출고 내역</h2>
                         <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">입고·출고·수정·이동 내역을 조회하고 Excel로 다운로드할 수 있습니다.</p>
                     </div>
-                    <div class="flex flex-wrap gap-2">
-                        <button type="button" onclick="downloadStockHistoryFiltered()" class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg text-sm font-medium text-white transition-colors">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">cloud_download</span>
-                            현재 목록 Excel 다운로드
+                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                        <button type="button" onclick="downloadStockHistoryFiltered()" class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg text-sm font-medium text-white transition-colors flex-1 sm:flex-none min-w-0">
+                            <span class="material-symbols-outlined shrink-0" style="font-size: 18px;">cloud_download</span>
+                            <span class="truncate">현재 목록 Excel 다운로드</span>
                         </button>
-                        <button type="button" onclick="downloadStockHistoryAll()" class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
-                            전체 입출고 Excel 다운로드
+                        <button type="button" onclick="downloadStockHistoryAll()" class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex-1 sm:flex-none min-w-0">
+                            <span class="material-symbols-outlined shrink-0" style="font-size: 18px;">download</span>
+                            <span class="truncate">전체 입출고 Excel 다운로드</span>
                         </button>
                     </div>
                 </div>
@@ -922,7 +922,7 @@
                     const warehouseStatus = stockStatusText(warehouseStock);
                     const lastStockQuantity = brochure.last_warehouse_stock_quantity ?? 0;
                     const lastStockDate = brochure.last_warehouse_stock_date || '-';
-                    return '<td class="py-3 px-4">' + (brochure.name || '') + '</td><td class="py-3 px-4 text-right ' + warehouseClass + '">' + warehouseStock + '권</td><td class="py-3 px-4 text-center"><span class="font-medium ' + warehouseStatus.color + '">' + warehouseStatus.text + '</span></td><td class="py-3 px-4">' + (lastStockQuantity > 0 ? lastStockQuantity + '권 (' + lastStockDate + ')' : '-') + '</td><td class="py-3 px-4 text-center"><button type="button" onclick="openStockModal(\'' + brochure.id + '\', true)" class="px-2 py-1 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700">입고</button></td><td class="py-3 px-4 text-center"><button type="button" onclick="openTransferToHqModal(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 mr-1">→ 본사</button><button type="button" onclick="openStockEditModal(\'' + brochure.id + '\', true)" class="px-2 py-1 rounded bg-slate-500 text-white text-xs font-medium hover:bg-slate-600 mr-1">재고 수정</button><button type="button" onclick="deleteBrochure(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700">삭제</button></td>';
+                    return '<td class="py-3 px-4">' + (brochure.name || '') + '</td><td class="py-3 px-4 text-right ' + warehouseClass + '">' + warehouseStock + '권</td><td class="py-3 px-4 text-center"><span class="font-medium ' + warehouseStatus.color + '">' + warehouseStatus.text + '</span></td><td class="py-3 px-4">' + (lastStockQuantity > 0 ? lastStockQuantity + '권 (' + lastStockDate + ')' : '-') + '</td><td class="py-3 px-4 text-center"><button type="button" onclick="openStockModal(\'' + brochure.id + '\', true)" class="px-2 py-1 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700 whitespace-nowrap">입고</button></td><td class="py-3 px-4"><div class="flex flex-wrap gap-1 justify-center">' + '<button type="button" onclick="openTransferToHqModal(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 whitespace-nowrap">→ 본사</button>' + '<button type="button" onclick="openStockEditModal(\'' + brochure.id + '\', true)" class="px-2 py-1 rounded bg-slate-500 text-white text-xs font-medium hover:bg-slate-600 whitespace-nowrap">재고 수정</button>' + '<button type="button" onclick="deleteBrochure(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700 whitespace-nowrap">삭제</button></div></td>';
                 };
                 const rowHtmlHq = function(brochure) {
                     const hqStock = brochure.stock ?? 0;
@@ -930,7 +930,7 @@
                     const hqStatus = stockStatusText(hqStock, 'hq');
                     const lastStockQuantity = brochure.last_stock_quantity ?? 0;
                     const lastStockDate = brochure.last_stock_date || '-';
-                    return '<td class="py-3 px-4">' + (brochure.name || '') + '</td><td class="py-3 px-4 text-right ' + hqClass + '">' + hqStock + '권</td><td class="py-3 px-4 text-center"><span class="font-medium ' + hqStatus.color + '">' + hqStatus.text + '</span></td><td class="py-3 px-4">' + (lastStockQuantity > 0 ? lastStockQuantity + '권 (' + lastStockDate + ')' : '-') + '</td><td class="py-3 px-4 text-center"><button type="button" onclick="openStockModal(\'' + brochure.id + '\', false)" class="px-2 py-1 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700">입고</button></td><td class="py-3 px-4 text-center"><button type="button" onclick="openStockEditModal(\'' + brochure.id + '\', false)" class="px-2 py-1 rounded bg-slate-500 text-white text-xs font-medium hover:bg-slate-600 mr-1">재고 수정</button><button type="button" onclick="deleteBrochure(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700">삭제</button></td>';
+                    return '<td class="py-3 px-4">' + (brochure.name || '') + '</td><td class="py-3 px-4 text-right ' + hqClass + '">' + hqStock + '권</td><td class="py-3 px-4 text-center"><span class="font-medium ' + hqStatus.color + '">' + hqStatus.text + '</span></td><td class="py-3 px-4">' + (lastStockQuantity > 0 ? lastStockQuantity + '권 (' + lastStockDate + ')' : '-') + '</td><td class="py-3 px-4 text-center"><button type="button" onclick="openStockModal(\'' + brochure.id + '\', false)" class="px-2 py-1 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700 whitespace-nowrap">입고</button></td><td class="py-3 px-4"><div class="flex flex-wrap gap-1 justify-center">' + '<button type="button" onclick="openStockEditModal(\'' + brochure.id + '\', false)" class="px-2 py-1 rounded bg-slate-500 text-white text-xs font-medium hover:bg-slate-600 whitespace-nowrap">재고 수정</button>' + '<button type="button" onclick="deleteBrochure(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700 whitespace-nowrap">삭제</button></div></td>';
                 };
                 brochures.forEach(brochure => {
                     const trClass = 'border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50';
