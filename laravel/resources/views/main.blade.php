@@ -1,6 +1,6 @@
 @extends('layouts.shell-no-sidebar')
 
-@section('title', 'GrapeSEED Brochure Main')
+@section('title', 'GrapeSEED Brochure')
 
 @section('content')
     <div id="main-page-content" class="w-full max-w-2xl mx-auto text-center flex flex-col items-center justify-center transition-opacity duration-300 ease-out">
