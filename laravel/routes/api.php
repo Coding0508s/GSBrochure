@@ -17,12 +17,15 @@ Route::delete('brochures/{id}', [BrochureController::class, 'destroy']);
 Route::put('brochures/{id}/stock', [BrochureController::class, 'updateStock']);
 Route::put('brochures/{id}/stock-warehouse', [BrochureController::class, 'updateWarehouseStock']);
 Route::put('brochures/{id}/transfer-to-hq', [BrochureController::class, 'transferToHq']);
+Route::post('brochures/{id}/image', [BrochureController::class, 'uploadImage']);
+Route::delete('brochures/{id}/image', [BrochureController::class, 'deleteImage']);
 
 Route::get('contacts', [ContactController::class, 'index']);
 Route::post('contacts', [ContactController::class, 'store']);
 Route::put('contacts/{id}', [ContactController::class, 'update']);
 Route::delete('contacts/{id}', [ContactController::class, 'destroy']);
 
+Route::get('requests/search', [RequestController::class, 'search']);
 Route::get('requests', [RequestController::class, 'index']);
 Route::post('requests', [RequestController::class, 'store']);
 Route::put('requests/{id}', [RequestController::class, 'update']);

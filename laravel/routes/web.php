@@ -17,12 +17,24 @@ Route::get('/admin/dashboard', function () {
 Route::get('/requestbrochure', function () {
     return view('request.form');
 });
+Route::get('/requestbrochure-v2', function () {
+    return view('request.form-v2');
+});
+Route::get('/requestbrochure-v3', function () {
+    return view('request.form-v3');
+});
 Route::get('/requestbrochure-list', function () {
     return view('request.list');
+});
+Route::get('/requestbrochure-list-v2', function () {
+    return view('request.list-v2');
 });
 Route::get('/requestbrochure-logistics', function () {
     return redirect()->to(url('admin/dashboard') . '?section=logistics');
 });
 Route::get('/requestbrochure-completed', function () {
     return view('request.completed');
+});
+Route::get('/requestbrochure-success', function () {
+    return view('request.success');
 });

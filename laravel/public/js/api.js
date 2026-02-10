@@ -9,8 +9,10 @@ const API_BASE_URL = typeof window !== 'undefined' && window.API_BASE_URL
     })();
 
 async function apiCall(endpoint, method = 'GET', data = null, fetchOpts = {}) {
-    const options = { ...fetchOpts, method, headers: { 'Content-Type': 'application/json', ...(fetchOpts.headers || {}) } };
-    if (data && (method === 'POST' || method === 'PUT')) options.body = JSON.stringify(data);
+    const isFormData = data instanceof FormData;
+    const options = { ...fetchOpts, method, headers: { 'Accept': 'application/json', ...(fetchOpts.headers || {}) } };
+    if (!isFormData) options.headers['Content-Type'] = 'application/json';
+    if (data && (method === 'POST' || method === 'PUT')) options.body = isFormData ? data : JSON.stringify(data);
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
         if (!response.ok) {
@@ -19,19 +21,29 @@ async function apiCall(endpoint, method = 'GET', data = null, fetchOpts = {}) {
                 const ct = response.headers.get('content-type');
                 if (ct && ct.includes('application/json')) {
                     const err = await response.json();
-                    errorMessage = err.error || errorMessage;
+                    errorMessage = err.error || err.message || errorMessage;
                     if (errorMessage === `HTTP error! status: ${response.status}` && err.errors && typeof err.errors === 'object') {
                         const keys = Object.keys(err.errors);
                         if (keys.length && err.errors[keys[0]] && err.errors[keys[0]][0]) errorMessage = err.errors[keys[0]][0];
                     }
-                    if (errorMessage === `HTTP error! status: ${response.status}` && err.message) errorMessage = err.message;
                 } else errorMessage = (await response.text()) || errorMessage;
             } catch (_) {}
             if (response.status === 401) errorMessage = '인증 실패: 아이디 또는 비밀번호가 올바르지 않습니다.';
             throw new Error(errorMessage);
         }
+        const ct = response.headers.get('content-type');
+        if (ct && !ct.includes('application/json')) {
+            const text = await response.text();
+            if (text && text.trimStart().startsWith('<')) {
+                throw new Error('서버가 HTML을 반환했습니다. API 주소 또는 서버 구성을 확인해 주세요. (이미지 업로드: ' + response.status + ')');
+            }
+        }
         return await response.json();
     } catch (e) {
+        if (e instanceof SyntaxError && e.message && e.message.includes('JSON')) {
+            console.error('API 호출 오류: 서버 응답이 JSON이 아닙니다.', e);
+            throw new Error('서버가 JSON 대신 HTML을 반환했습니다. API 경로(/api/brochures/.../image) 및 storage 링크(php artisan storage:link)를 확인해 주세요.');
+        }
         console.error('API 호출 오류:', e);
         throw e;
     }
@@ -44,7 +56,13 @@ const BrochureAPI = {
     delete: (id) => apiCall(`/brochures/${id}`, 'DELETE'),
     updateStock: (id, quantity, date, memo) => apiCall(`/brochures/${id}/stock`, 'PUT', { quantity, date, memo: memo || '' }),
     updateWarehouseStock: (id, quantity, date, memo) => apiCall(`/brochures/${id}/stock-warehouse`, 'PUT', { quantity, date, memo: memo || '' }),
-    transferToHq: (id, quantity, date, memo) => apiCall(`/brochures/${id}/transfer-to-hq`, 'PUT', { quantity, date, memo: memo || '' })
+    transferToHq: (id, quantity, date, memo) => apiCall(`/brochures/${id}/transfer-to-hq`, 'PUT', { quantity, date, memo: memo || '' }),
+    uploadImage: (id, file) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        return apiCall(`/brochures/${id}/image`, 'POST', formData);
+    },
+    deleteImage: (id) => apiCall(`/brochures/${id}/image`, 'DELETE')
 };
 const ContactAPI = {
     getAll: () => apiCall('/contacts'),
@@ -54,6 +72,15 @@ const ContactAPI = {
 };
 const RequestAPI = {
     getAll: () => apiCall('/requests'),
+    search: (params) => {
+        const q = new URLSearchParams();
+        const sn = params && params.schoolname != null ? String(params.schoolname).trim() : '';
+        const ph = params && params.phone != null ? String(params.phone).trim() : '';
+        if (sn) q.set('schoolname', sn);
+        if (ph) q.set('phone', ph);
+        const query = q.toString();
+        return apiCall('/requests/search' + (query ? '?' + query : ''));
+    },
     create: (data) => apiCall('/requests', 'POST', data),
     update: (id, data) => apiCall(`/requests/${id}`, 'PUT', data),
     addInvoices: (id, invoices) => apiCall(`/requests/${id}/invoices`, 'POST', { invoices }),

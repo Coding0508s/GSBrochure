@@ -8,6 +8,8 @@ use App\Models\StockHistory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BrochureController extends Controller
 {
@@ -40,16 +42,27 @@ class BrochureController extends Controller
     {
         $request->validate([
             'name' => 'required|string|unique:brochures,name',
+            'image_url' => 'sometimes|nullable|string|max:2048',
             'stock' => 'sometimes|integer',
             'stock_warehouse' => 'sometimes|integer',
         ], [
             'name.unique' => '이미 같은 이름의 브로셔가 있습니다. 다른 이름을 입력해 주세요.',
         ]);
         $name = trim((string) $request->input('name'));
+        $imageUrl = $request->input('image_url');
+        $imageUrl = is_string($imageUrl) ? trim($imageUrl) : null;
+        if ($imageUrl === '') {
+            $imageUrl = null;
+        }
         $stock = (int) $request->input('stock', 0);
         $stockWarehouse = (int) $request->input('stock_warehouse', 0);
         try {
-            $brochure = Brochure::create(['name' => $name, 'stock' => $stock, 'stock_warehouse' => $stockWarehouse]);
+            $brochure = Brochure::create([
+                'name' => $name,
+                'image_url' => $imageUrl,
+                'stock' => $stock,
+                'stock_warehouse' => $stockWarehouse,
+            ]);
             $date = now()->format('Y-m-d');
             $base = [
                 'brochure_id' => $brochure->id,
@@ -85,9 +98,85 @@ class BrochureController extends Controller
     public function update(Request $request, string $id): JsonResponse
     {
         $brochure = Brochure::findOrFail($id);
-        $request->validate(['name' => 'sometimes|string', 'stock' => 'sometimes|integer', 'stock_warehouse' => 'sometimes|integer']);
-        $brochure->fill($request->only(['name', 'stock', 'stock_warehouse']));
+        $request->validate([
+            'name' => 'sometimes|string',
+            'image_url' => 'sometimes|nullable|string|max:2048',
+            'stock' => 'sometimes|integer',
+            'stock_warehouse' => 'sometimes|integer',
+        ]);
+        $data = $request->only(['name', 'stock', 'stock_warehouse']);
+        $imageUrl = $request->input('image_url');
+        $data['image_url'] = is_string($imageUrl) ? trim($imageUrl) : $brochure->image_url;
+        if ($data['image_url'] === '') {
+            $data['image_url'] = null;
+        }
+        $brochure->fill($data);
         $brochure->save();
+        return response()->json(['success' => true]);
+    }
+
+    public function uploadImage(Request $request, string $id): JsonResponse
+    {
+        try {
+            $file = $request->file('image');
+            if (! $file || ! $file->isValid()) {
+                $msg = '이미지 업로드에 실패했습니다. 파일 크기(최대 2MB)를 확인하고, 서버의 upload_max_filesize·post_max_size 설정을 확인해 주세요.';
+                return response()->json(['error' => $msg, 'errors' => ['image' => [$msg]]], 422);
+            }
+            $request->validate([
+                'image' => 'required|file|mimes:jpeg,jpg,png,gif,webp|max:2048',
+            ], [
+                'image.required' => '이미지 파일을 선택해 주세요.',
+                'image.file' => '이미지 업로드에 실패했습니다. 파일 크기(최대 2MB)를 확인해 주세요.',
+                'image.uploaded' => '이미지 업로드에 실패했습니다. 파일 크기(최대 2MB)와 서버 업로드 제한을 확인해 주세요.',
+                'image.mimes' => 'JPEG, PNG, GIF, WebP 형식만 가능합니다.',
+                'image.max' => '이미지 크기는 2MB 이하여야 합니다.',
+            ]);
+            $brochure = Brochure::findOrFail($id);
+            $ext = $file->getClientOriginalExtension() ?: $file->guessExtension();
+            if (! in_array(strtolower((string) $ext), ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+                $ext = 'jpg';
+            }
+            $path = 'brochures/' . $id . '_' . Str::uuid() . '.' . $ext;
+
+            $oldUrl = $brochure->image_url;
+            if (is_string($oldUrl) && $oldUrl !== '') {
+                $prefix = '/storage/brochures/';
+                if (str_starts_with($oldUrl, $prefix) || str_contains($oldUrl, '/storage/brochures/')) {
+                    $oldPath = 'brochures/' . basename(parse_url($oldUrl, PHP_URL_PATH));
+                    if (Storage::disk('public')->exists($oldPath)) {
+                        Storage::disk('public')->delete($oldPath);
+                    }
+                }
+            }
+
+            Storage::disk('public')->put($path, file_get_contents($file->getRealPath()));
+
+            $brochure->update(['image_url' => Storage::url($path)]);
+
+            return response()->json(['image_url' => $brochure->fresh()->image_url]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            \Log::error('Brochure uploadImage error: ' . $e->getMessage(), ['id' => $id, 'exception' => $e]);
+            return response()->json(['error' => $e->getMessage() ?: '이미지 업로드 중 오류가 발생했습니다.'], 500);
+        }
+    }
+
+    public function deleteImage(string $id): JsonResponse
+    {
+        $brochure = Brochure::findOrFail($id);
+        $oldUrl = $brochure->image_url;
+        if (is_string($oldUrl) && $oldUrl !== '') {
+            $prefix = '/storage/brochures/';
+            if (str_starts_with($oldUrl, $prefix) || str_contains($oldUrl, '/storage/brochures/')) {
+                $oldPath = 'brochures/' . basename(parse_url($oldUrl, PHP_URL_PATH));
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+        }
+        $brochure->update(['image_url' => null]);
         return response()->json(['success' => true]);
     }
 

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Brochure extends Model
 {
     protected $fillable = [
-        'name', 'stock', 'stock_warehouse',
+        'name', 'image_url', 'stock', 'stock_warehouse',
         'last_stock_quantity', 'last_stock_date',
         'last_warehouse_stock_quantity', 'last_warehouse_stock_date',
     ];

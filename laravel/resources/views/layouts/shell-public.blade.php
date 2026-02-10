@@ -42,11 +42,7 @@
     @php
         $path = request()->path();
         $navRequest = ($path === 'requestbrochure' || $path === 'requestbrochure-v2');
-        $navList = ($path === 'requestbrochure-list');
-        $navListV2 = ($path === 'requestbrochure-list-v2');
-        $navLogistics = ($path === 'requestbrochure-logistics');
-        $navAdmin = (str_starts_with($path, 'admin'));
-        $navMain = ($path === '' || $path === '/');
+        $navList = ($path === 'requestbrochure-list' || $path === 'requestbrochure-list-v2');
     @endphp
     <div class="flex min-h-screen">
         <aside class="w-64 bg-surface-light dark:bg-surface-dark border-r border-border-light dark:border-border-dark hidden md:flex flex-col fixed h-full z-10">
@@ -55,34 +51,19 @@
                 <span class="font-bold text-lg text-primary tracking-tight">GrapeSEED</span>
             </div>
             <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-                <!-- <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium {{ $navRequest ? 'bg-primary/10 text-primary rounded-lg dark:bg-primary/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors' }}" href="{{ url('requestbrochure-v2') }}">
+                <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium {{ $navRequest ? 'bg-primary/10 text-primary rounded-lg dark:bg-primary/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors' }}" href="{{ url('requestbrochure-v2') }}">
                     <span class="material-icons text-xl">description</span>
                     브로셔 신청
-                </a> -->
-                <!-- <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium {{ $navList ? 'bg-primary/10 text-primary rounded-lg dark:bg-primary/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors' }}" href="{{ url('requestbrochure-list') }}">
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium {{ $navList ? 'bg-primary/10 text-primary rounded-lg dark:bg-primary/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors' }}" href="{{ url('requestbrochure-list-v2') }}">
                     <span class="material-icons text-xl">history</span>
                     신청 내역 조회
-                </a> -->
-                <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium {{ $navListV2 ? 'bg-primary/10 text-primary rounded-lg dark:bg-primary/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors' }}" href="{{ url('requestbrochure-list') }}">
-                    <span class="material-icons text-xl">person_search</span>
-                    신청 내역 조회 (전체)
                 </a>
-                <!-- <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium {{ $navLogistics ? 'bg-primary/10 text-primary rounded-lg dark:bg-primary/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors' }}" href="{{ url('requestbrochure-logistics') }}">
-                    <span class="material-icons text-xl">input</span>
-                    운송장 번호 입력
-                </a> -->
-                @if($path !== 'requestbrochure' && $path !== 'requestbrochure-list' && $path !== 'requestbrochure-list-v2' && $path !== 'requestbrochure-v2')
-                <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium {{ $navAdmin ? 'bg-primary/10 text-primary rounded-lg dark:bg-primary/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors' }}" href="{{ url('admin/login') }}">
-                    <span class="material-icons text-xl">settings</span>
-                    관리자 페이지
-                </a>
-                @endif
-
             </nav>
-            <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors mt-auto" href="{{ url('/') }}">
+        <!--     <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors mt-auto" href="{{ url('/') }}">
                 <span class="material-icons text-xl">home</span>
                 메인으로 돌아가기
-            </a>
+            </a> -->
             <div class="p-4 border-t border-border-light dark:border-border-dark">
                 <div class="flex items-center gap-3 px-4 py-2">
                     <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">

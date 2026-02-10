@@ -40,6 +40,50 @@ class RequestController extends Controller
         return response()->json($requests);
     }
 
+    public function search(Request $request): JsonResponse
+    {
+        $schoolname = $request->query('schoolname');
+        $phone = $request->query('phone');
+        $schoolname = is_string($schoolname) ? trim($schoolname) : '';
+        $phone = is_string($phone) ? trim($phone) : '';
+        if ($schoolname === '' && $phone === '') {
+            return response()->json(['error' => '기관명 또는 전화번호를 입력해 주세요.'], 400);
+        }
+        $query = BrochureRequest::with(['requestItems', 'invoices']);
+        if ($schoolname !== '' && $phone !== '') {
+            $query->where(function ($q) use ($schoolname, $phone) {
+                $q->where('schoolname', 'like', '%' . $schoolname . '%')
+                    ->orWhere('phone', 'like', '%' . $phone . '%');
+            });
+        } elseif ($schoolname !== '') {
+            $query->where('schoolname', 'like', '%' . $schoolname . '%');
+        } else {
+            $query->where('phone', 'like', '%' . $phone . '%');
+        }
+        $requests = $query->orderByDesc('created_at')
+            ->get()
+            ->map(function (BrochureRequest $req) {
+                return [
+                    'id' => $req->id,
+                    'date' => $req->date,
+                    'schoolname' => $req->schoolname,
+                    'address' => $req->address,
+                    'phone' => $req->phone,
+                    'contact_id' => $req->contact_id,
+                    'contact_name' => $req->contact_name,
+                    'submitted_at' => $req->created_at?->toIso8601String(),
+                    'updated_at' => $req->updated_at?->toIso8601String(),
+                    'items' => $req->requestItems->map(fn ($ri) => [
+                        'brochure_id' => $ri->brochure_id,
+                        'brochure_name' => $ri->brochure_name,
+                        'quantity' => $ri->quantity,
+                    ])->values()->all(),
+                    'invoices' => $req->invoices->pluck('invoice_number')->all(),
+                ];
+            });
+        return response()->json($requests->values()->all());
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([

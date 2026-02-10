@@ -46,6 +46,16 @@ php artisan serve
 
 브라우저에서 http://localhost:8000 접속
 
+### 브로셔 이미지 업로드 (관리자)
+
+관리자 대시보드에서 브로셔 이미지를 파일로 업로드하려면 **storage 링크**가 필요합니다. 로컬/배포 환경에서 한 번 실행하세요.
+
+```bash
+php artisan storage:link
+```
+
+`public/storage` → `storage/app/public` 심볼릭 링크가 생성되며, 업로드된 이미지는 `storage/app/public/brochures/`에 저장됩니다.
+
 ## 라우트
 
 | 경로 | 설명 |
