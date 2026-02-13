@@ -304,7 +304,7 @@
                 </div>
                 <div class="info-item space-y-1">
                     <div class="info-label text-xs font-medium text-gray-500 dark:text-gray-400">전화번호</div>
-                    <div class="info-value text-sm text-gray-900 dark:text-white" data-field="phone">${request.phone}</div>
+                    <div class="info-value text-sm text-gray-900 dark:text-white" data-field="phone">${formatPhoneDisplay(request.phone)}</div>
                 </div>
                 <div class="info-item space-y-1">
                     <div class="info-label text-xs font-medium text-gray-500 dark:text-gray-400">담당자</div>
@@ -496,6 +496,22 @@
         doSearch();
     }
 
+    function formatPhoneDisplay(phone) {
+        if (phone == null || phone === '') return '-';
+        const digits = String(phone).replace(/\D/g, '');
+        if (digits.length === 11 && digits.startsWith('010')) return digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7);
+        if (digits.length === 10 && digits.startsWith('010')) return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
+        if (digits.length === 10 && digits.startsWith('02')) return digits.slice(0, 2) + '-' + digits.slice(2, 6) + '-' + digits.slice(6);
+        if (digits.length === 9 && digits.startsWith('02')) return digits.slice(0, 2) + '-' + digits.slice(2, 5) + '-' + digits.slice(5);
+        if (digits.length === 10 && /^01[16789]/.test(digits)) return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
+        if (digits.length === 9 && /^0[3-6]\d/.test(digits)) return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
+        if (digits.length === 10 && /^0[3-6]\d/.test(digits)) return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
+        if (digits.length === 11) return digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7);
+        if (digits.length === 10) return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6, 10);
+        if (digits.length === 9) return digits.slice(0, 2) + '-' + digits.slice(2, 5) + '-' + digits.slice(5);
+        return phone;
+    }
+
     function formatDate(dateString) {
         if (!dateString) return '-';
         const date = new Date(dateString);
@@ -533,9 +549,39 @@
         setTimeout(() => alertDiv.classList.add('hidden'), 3000);
     }
 
+    function formatPhoneInput(value) {
+        const digits = String(value).replace(/\D/g, '');
+        if (digits.length <= 3) return digits;
+        if (digits.startsWith('02') && digits.length <= 2) return digits;
+        if (digits.startsWith('02') && digits.length <= 5) return digits.slice(0, 2) + '-' + digits.slice(2);
+        if (digits.startsWith('02') && digits.length <= 9) return digits.slice(0, 2) + '-' + digits.slice(2, 5) + '-' + digits.slice(5);
+        if (digits.startsWith('02') && digits.length <= 10) return digits.slice(0, 2) + '-' + digits.slice(2, 6) + '-' + digits.slice(6);
+        if (digits.startsWith('010')) {
+            if (digits.length <= 6) return digits.slice(0, 3) + '-' + digits.slice(3);
+            if (digits.length <= 10) return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
+            if (digits.length <= 11) return digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7, 11);
+            return digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7, 11);
+        }
+        if (digits.startsWith('01') && digits.length <= 3) return digits;
+        if (digits.startsWith('01') && digits.length <= 6) return digits.slice(0, 3) + '-' + digits.slice(3);
+        if (digits.startsWith('01') && digits.length <= 10) return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
+        if (/^0[3-6]\d/.test(digits) && digits.length <= 6) return digits.slice(0, 3) + '-' + digits.slice(3);
+        if (/^0[3-6]\d/.test(digits) && digits.length <= 10) return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
+        if (/^0[3-6]\d/.test(digits)) return digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7, 11);
+        if (digits.length <= 7) return digits.slice(0, 3) + '-' + digits.slice(3);
+        if (digits.length <= 11) return digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7, 11);
+        return digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7, 11);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const searchBtn = document.getElementById('searchBtn');
         if (searchBtn) searchBtn.addEventListener('click', doSearch);
+        const searchPhone = document.getElementById('searchPhone');
+        if (searchPhone) {
+            searchPhone.addEventListener('input', function() {
+                this.value = formatPhoneInput(this.value);
+            });
+        }
     });
 </script>
 @endpush

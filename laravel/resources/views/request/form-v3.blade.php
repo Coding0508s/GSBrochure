@@ -167,8 +167,28 @@
 
     function formatPhoneNumberV2(input) {
         var value = input.value.replace(/\D/g, '');
-        if (value.length <= 3) input.value = value;
-        else if (value.length <= 7) input.value = value.slice(0, 3) + '-' + value.slice(3);
+        if (value.length <= 3) { input.value = value; return; }
+        if (value.startsWith('02')) {
+            if (value.length <= 5) input.value = value.slice(0, 2) + '-' + value.slice(2);
+            else if (value.length <= 9) input.value = value.slice(0, 2) + '-' + value.slice(2, 5) + '-' + value.slice(5);
+            else input.value = value.slice(0, 2) + '-' + value.slice(2, 6) + '-' + value.slice(6, 10);
+            return;
+        }
+        if (value.startsWith('010')) {
+            if (value.length <= 6) input.value = value.slice(0, 3) + '-' + value.slice(3);
+            else if (value.length <= 10) input.value = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6);
+            else input.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+            return;
+        }
+        if (/^0[3-6]\d/.test(value)) {
+            if (value.length <= 6) input.value = value.slice(0, 3) + '-' + value.slice(3);
+            else if (value.length <= 10) input.value = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6);
+            else input.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+            return;
+        }
+        if (value.startsWith('01') && value.length <= 6) { input.value = value.slice(0, 3) + '-' + value.slice(3); return; }
+        if (value.startsWith('01') && value.length <= 10) { input.value = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6); return; }
+        if (value.length <= 7) input.value = value.slice(0, 3) + '-' + value.slice(3);
         else if (value.length <= 11) input.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7);
         else input.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
     }

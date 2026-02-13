@@ -28,9 +28,16 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="request-date">신청일</label>
                         <input class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5" id="request-date" name="request_date" type="date" required/>
                     </div>
+                    <div class="hidden md:block"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="org-name">기관명</label>
                         <input class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5" id="org-name" name="org_name" placeholder="기관명을 입력하세요" type="text" required/>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="address">주소</label>
+                        <input class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5" id="address" name="address" type="text" required/>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -39,8 +46,16 @@
                         <input class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5" id="phone" name="phone" placeholder="010-0000-0000" type="tel" maxlength="13" required/>
                     </div>
                     <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="address">주소</label>
-                        <input class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5" id="address" name="address" type="text" required/>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="verify-code">인증번호</label>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span id="verify-code-wrap" class="hidden">
+                                <input class="block w-24 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5" id="verify-code" placeholder="6자리" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code"/>
+                            </span>
+                            <button type="button" id="verify-btn" class="px-4 py-2.5 rounded-lg bg-primary hover:bg-purple-800 text-white text-sm font-medium transition-colors whitespace-nowrap shadow-sm">
+                                인증번호 발송
+                            </button>
+                            <span id="verify-status" class="text-sm text-gray-500 dark:text-gray-400"></span>
+                        </div>
                     </div>
                 </div>
                 <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">
@@ -77,6 +92,10 @@
                             <p id="brochureDropdownLoading" class="p-4 text-sm text-gray-500 dark:text-gray-400">불러오는 중...</p>
                             <div id="brochureDropdownOptions" class="p-2 grid grid-cols-1 sm:grid-cols-2 gap-1"></div>
                         </div>
+                        <div id="brochureHoverPreview" class="hidden absolute z-30 left-full ml-2 top-0 w-40 rounded-lg border-2 border-primary/30 bg-white dark:bg-gray-800 shadow-xl p-2 pointer-events-none">
+                            <img id="brochureHoverPreviewImg" src="" alt="" class="w-full aspect-[3/4] object-cover rounded border border-gray-100 dark:border-gray-600" onerror="this.onerror=null;this.src=window.BROCHURE_PLACEHOLDER_IMG"/>
+                            <p id="brochureHoverPreviewName" class="text-xs font-medium text-gray-900 dark:text-white mt-1.5 line-clamp-2 break-words"></p>
+                        </div>
                     </div>
                     <div class="flex items-center gap-2">
                         <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">수량</label>
@@ -110,7 +129,7 @@
         </section>
 
         <div class="flex justify-end pt-4 pb-12">
-            <button type="submit" class="px-10 py-3 bg-primary hover:bg-purple-800 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-95">
+            <button type="submit" id="brochureSubmitBtn" disabled class="px-10 py-3 bg-primary hover:bg-purple-800 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary disabled:active:scale-100">
                 신청하기
             </button>
         </div>
@@ -163,6 +182,7 @@
                     '<span class="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">' + nameEsc + '</span>';
                 optionsEl.appendChild(opt);
             });
+            bindBrochureHoverPreview();
         } catch (err) {
             console.error('브로셔 목록 로드 오류:', err);
             if (loadingEl) loadingEl.classList.add('hidden');
@@ -215,6 +235,57 @@
         setSelectedBrochure(null);
     }
 
+    var brochurePreviewHideTimer = null;
+
+    function bindBrochureHoverPreview() {
+        var optionsEl = document.getElementById('brochureDropdownOptions');
+        var previewEl = document.getElementById('brochureHoverPreview');
+        var previewImg = document.getElementById('brochureHoverPreviewImg');
+        var previewName = document.getElementById('brochureHoverPreviewName');
+        if (!optionsEl || !previewEl || !previewImg || !previewName) return;
+        optionsEl.removeEventListener('mouseenter', onBrochureOptionHover);
+        optionsEl.removeEventListener('mouseleave', onBrochureOptionLeave);
+        optionsEl.addEventListener('mouseenter', onBrochureOptionHover, true);
+        optionsEl.addEventListener('mouseleave', onBrochureOptionLeave, true);
+    }
+
+    function onBrochureOptionHover(e) {
+        if (brochurePreviewHideTimer) {
+            clearTimeout(brochurePreviewHideTimer);
+            brochurePreviewHideTimer = null;
+        }
+        var opt = e.target && e.target.closest && e.target.closest('.brochure-dropdown-option');
+        if (!opt) return;
+        var imgSrc = opt.dataset.brochureImage || window.BROCHURE_PLACEHOLDER_IMG;
+        var name = opt.dataset.brochureName || '';
+        var previewEl = document.getElementById('brochureHoverPreview');
+        var previewImg = document.getElementById('brochureHoverPreviewImg');
+        var previewName = document.getElementById('brochureHoverPreviewName');
+        if (previewImg) previewImg.src = imgSrc;
+        if (previewName) previewName.textContent = name;
+        if (previewEl) {
+            previewEl.classList.remove('hidden');
+            var wrap = document.getElementById('brochureDropdownWrap');
+            if (wrap) {
+                var rect = opt.getBoundingClientRect();
+                var wrapRect = wrap.getBoundingClientRect();
+                previewEl.style.top = (rect.top - wrapRect.top) + 'px';
+            }
+        }
+    }
+
+    function onBrochureOptionLeave(e) {
+        var optionsEl = document.getElementById('brochureDropdownOptions');
+        var related = e.relatedTarget;
+        if (related && optionsEl && optionsEl.contains(related)) return;
+        if (brochurePreviewHideTimer) clearTimeout(brochurePreviewHideTimer);
+        brochurePreviewHideTimer = setTimeout(function() {
+            brochurePreviewHideTimer = null;
+            var previewEl = document.getElementById('brochureHoverPreview');
+            if (previewEl) previewEl.classList.add('hidden');
+        }, 80);
+    }
+
     function collectBrochureItemsV2FromList() {
         var items = [];
         var rows = document.querySelectorAll('#brochureSelectedBody .brochure-selected-row');
@@ -242,8 +313,28 @@
 
     function formatPhoneNumberV2(input) {
         var value = input.value.replace(/\D/g, '');
-        if (value.length <= 3) input.value = value;
-        else if (value.length <= 7) input.value = value.slice(0, 3) + '-' + value.slice(3);
+        if (value.length <= 3) { input.value = value; return; }
+        if (value.startsWith('02')) {
+            if (value.length <= 5) input.value = value.slice(0, 2) + '-' + value.slice(2);
+            else if (value.length <= 9) input.value = value.slice(0, 2) + '-' + value.slice(2, 5) + '-' + value.slice(5);
+            else input.value = value.slice(0, 2) + '-' + value.slice(2, 6) + '-' + value.slice(6, 10);
+            return;
+        }
+        if (value.startsWith('010')) {
+            if (value.length <= 6) input.value = value.slice(0, 3) + '-' + value.slice(3);
+            else if (value.length <= 10) input.value = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6);
+            else input.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+            return;
+        }
+        if (/^0[3-6]\d/.test(value)) {
+            if (value.length <= 6) input.value = value.slice(0, 3) + '-' + value.slice(3);
+            else if (value.length <= 10) input.value = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6);
+            else input.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+            return;
+        }
+        if (value.startsWith('01') && value.length <= 6) { input.value = value.slice(0, 3) + '-' + value.slice(3); return; }
+        if (value.startsWith('01') && value.length <= 10) { input.value = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6); return; }
+        if (value.length <= 7) input.value = value.slice(0, 3) + '-' + value.slice(3);
         else if (value.length <= 11) input.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7);
         else input.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
     }
@@ -342,12 +433,81 @@
         document.addEventListener('click', function(e) {
             if (panel && !panel.classList.contains('hidden') && wrap && !wrap.contains(e.target)) {
                 panel.classList.add('hidden');
+                if (brochurePreviewHideTimer) { clearTimeout(brochurePreviewHideTimer); brochurePreviewHideTimer = null; }
+                var previewEl = document.getElementById('brochureHoverPreview');
+                if (previewEl) previewEl.classList.add('hidden');
             }
         });
+
+        var verifyBtn = document.getElementById('verify-btn');
+        var verifyCodeEl = document.getElementById('verify-code');
+        var verifyStatusEl = document.getElementById('verify-status');
+        function setVerifyStatus(text, isError) {
+            if (!verifyStatusEl) return;
+            verifyStatusEl.textContent = text || '';
+            verifyStatusEl.className = 'text-sm ' + (isError ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400');
+        }
+        function updateVerifyBtnLabel() {
+            if (!verifyBtn || !verifyCodeEl) return;
+            var code = (verifyCodeEl.value || '').trim();
+            verifyBtn.textContent = code ? '인증 확인' : '인증번호 발송';
+        }
+        if (verifyCodeEl) {
+            verifyCodeEl.addEventListener('input', function() {
+                this.value = this.value.replace(/\D/g, '').slice(0, 6);
+                updateVerifyBtnLabel();
+            });
+        }
+        if (verifyBtn && verifyCodeEl && verifyStatusEl) {
+            verifyBtn.addEventListener('click', async function() {
+                var phone = (document.getElementById('phone') && document.getElementById('phone').value) || '';
+                var code = (verifyCodeEl.value || '').trim();
+                if (!phone.trim()) {
+                    setVerifyStatus('전화번호를 먼저 입력해 주세요.', true);
+                    return;
+                }
+                if (!code) {
+                    verifyBtn.disabled = true;
+                    setVerifyStatus('발송 중...');
+                    try {
+                        await VerificationAPI.sendCode(phone);
+                        var wrap = document.getElementById('verify-code-wrap');
+                        if (wrap) wrap.classList.remove('hidden');
+                        setVerifyStatus('인증번호가 발송되었습니다. 문자를 확인한 뒤 입력해 주세요.');
+                        if (verifyCodeEl) { verifyCodeEl.value = ''; verifyCodeEl.focus(); }
+                    } catch (err) {
+                        setVerifyStatus(err.message || '발송에 실패했습니다.', true);
+                    }
+                    verifyBtn.disabled = false;
+                } else {
+                    verifyBtn.disabled = true;
+                    setVerifyStatus('확인 중...');
+                    try {
+                        await VerificationAPI.verify(phone, code);
+                        setVerifyStatus('인증이 완료되었습니다.');
+                        window.phoneVerified = true;
+                        var submitBtn = document.getElementById('brochureSubmitBtn');
+                        if (submitBtn) submitBtn.disabled = false;
+                    } catch (err) {
+                        setVerifyStatus(err.message || '인증에 실패했습니다.', true);
+                    }
+                    verifyBtn.disabled = false;
+                }
+            });
+        }
     });
 
     var phoneEl = document.getElementById('phone');
-    if (phoneEl) phoneEl.addEventListener('input', function() { formatPhoneNumberV2(this); });
+    if (phoneEl) {
+        phoneEl.addEventListener('input', function() { formatPhoneNumberV2(this); });
+        phoneEl.addEventListener('input', function() {
+            if (window.phoneVerified) {
+                window.phoneVerified = false;
+                var submitBtn = document.getElementById('brochureSubmitBtn');
+                if (submitBtn) submitBtn.disabled = true;
+            }
+        });
+    }
 
     document.getElementById('brochureFormV2').addEventListener('submit', async function(e) {
         e.preventDefault();

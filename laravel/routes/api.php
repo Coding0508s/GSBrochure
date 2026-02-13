@@ -7,8 +7,12 @@ use App\Http\Controllers\Api\RequestController;
 use App\Http\Controllers\Api\StockHistoryController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\ResetDataController;
+use App\Http\Controllers\Api\VerificationController;
 
 Route::get('/health', [BrochureController::class, 'health']);
+
+Route::post('verification/send', [VerificationController::class, 'sendCode']);
+Route::post('verification/verify', [VerificationController::class, 'verify']);
 
 Route::get('brochures', [BrochureController::class, 'index']);
 Route::post('brochures', [BrochureController::class, 'store']);

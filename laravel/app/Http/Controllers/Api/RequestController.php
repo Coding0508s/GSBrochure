@@ -49,16 +49,19 @@ class RequestController extends Controller
         if ($schoolname === '' && $phone === '') {
             return response()->json(['error' => '기관명 또는 전화번호를 입력해 주세요.'], 400);
         }
+        // 띄어쓰기 무시: 검색어와 DB 값 모두 공백 제거 후 비교
+        $schoolnameNorm = preg_replace('/\s+/u', '', $schoolname);
+        $phoneNorm = preg_replace('/\s+/u', '', $phone);
         $query = BrochureRequest::with(['requestItems', 'invoices']);
-        if ($schoolname !== '' && $phone !== '') {
-            $query->where(function ($q) use ($schoolname, $phone) {
-                $q->where('schoolname', 'like', '%' . $schoolname . '%')
-                    ->orWhere('phone', 'like', '%' . $phone . '%');
+        if ($schoolnameNorm !== '' && $phoneNorm !== '') {
+            $query->where(function ($q) use ($schoolnameNorm, $phoneNorm) {
+                $q->whereRaw('REPLACE(REPLACE(schoolname, " ", ""), CHAR(9), "") LIKE ?', ['%' . $schoolnameNorm . '%'])
+                    ->orWhereRaw('REPLACE(REPLACE(phone, " ", ""), CHAR(9), "") LIKE ?', ['%' . $phoneNorm . '%']);
             });
-        } elseif ($schoolname !== '') {
-            $query->where('schoolname', 'like', '%' . $schoolname . '%');
+        } elseif ($schoolnameNorm !== '') {
+            $query->whereRaw('REPLACE(REPLACE(schoolname, " ", ""), CHAR(9), "") LIKE ?', ['%' . $schoolnameNorm . '%']);
         } else {
-            $query->where('phone', 'like', '%' . $phone . '%');
+            $query->whereRaw('REPLACE(REPLACE(phone, " ", ""), CHAR(9), "") LIKE ?', ['%' . $phoneNorm . '%']);
         }
         $requests = $query->orderByDesc('created_at')
             ->get()

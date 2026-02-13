@@ -98,9 +98,14 @@ const AdminAPI = {
     deleteUser: (userId) => apiCall(`/admin/users/${userId}`, 'DELETE'),
     resetData: (type) => apiCall('/admin/reset', 'POST', { type })
 };
+const VerificationAPI = {
+    sendCode: (phone) => apiCall('/verification/send', 'POST', { phone }),
+    verify: (phone, code) => apiCall('/verification/verify', 'POST', { phone, code })
+};
 
 window.BrochureAPI = BrochureAPI;
 window.ContactAPI = ContactAPI;
 window.RequestAPI = RequestAPI;
 window.StockHistoryAPI = StockHistoryAPI;
 window.AdminAPI = AdminAPI;
+window.VerificationAPI = VerificationAPI;

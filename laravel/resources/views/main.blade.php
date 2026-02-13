@@ -10,7 +10,7 @@
             <p class="text-gray-600 dark:text-gray-300 mb-2">원하시는 서비스를 선택해 주세요.</p>
         </header>
         <div class="opacity-0 animate-fade-in-up-delay flex flex-wrap justify-center gap-4">
-            <a href="{{ url('requestbrochure') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-all duration-200 shadow-sm hover:-translate-y-1 hover:shadow-lg">
+            <a href="{{ url('requestbrochure-v2') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-all duration-200 shadow-sm hover:-translate-y-1 hover:shadow-lg">
                 <span class="material-icons text-xl">description</span>
                 브로셔 신청
             </a>

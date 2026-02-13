@@ -523,6 +523,12 @@
 
     <input type="file" id="brochureRowImageFile" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden" aria-hidden="true"/>
 
+    <div id="brochureImageMenuDropdown" class="hidden fixed z-50 min-w-[120px] py-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg"
+        style="left: 0; top: 0;">
+        <button type="button" id="brochureImageMenuUpload" class="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 whitespace-nowrap">이미지 업로드</button>
+        <button type="button" id="brochureImageMenuDelete" class="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 whitespace-nowrap">이미지 삭제</button>
+    </div>
+
     <div id="contactModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-modal="true">
         <div class="fixed inset-0 bg-black/50 transition-opacity" onclick="closeContactModal()"></div>
         <div class="flex min-h-full items-center justify-center p-4">
@@ -944,7 +950,7 @@
                     const warehouseStatus = stockStatusText(warehouseStock);
                     const lastStockQuantity = brochure.last_warehouse_stock_quantity ?? 0;
                     const lastStockDate = brochure.last_warehouse_stock_date || '-';
-                    return brochureThumbTd(brochure) + '<td class="py-3 px-4">' + (brochure.name || '') + '</td><td class="py-3 px-4 text-right ' + warehouseClass + '">' + warehouseStock + '권</td><td class="py-3 px-4 text-center"><span class="font-medium ' + warehouseStatus.color + '">' + warehouseStatus.text + '</span></td><td class="py-3 px-4">' + (lastStockQuantity > 0 ? lastStockQuantity + '권 (' + lastStockDate + ')' : '-') + '</td><td class="py-3 px-4 text-center"><button type="button" onclick="openStockModal(\'' + brochure.id + '\', true)" class="px-2 py-1 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700 whitespace-nowrap">입고</button></td><td class="py-3 px-4"><div class="flex flex-wrap gap-1 justify-center">' + '<button type="button" onclick="triggerBrochureImageUpload(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 whitespace-nowrap">이미지</button>' + '<button type="button" onclick="deleteBrochureImage(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-slate-600 text-white text-xs font-medium hover:bg-slate-700 whitespace-nowrap">이미지 삭제</button>' + '<button type="button" onclick="openTransferToHqModal(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 whitespace-nowrap">→ 본사</button>' + '<button type="button" onclick="openStockEditModal(\'' + brochure.id + '\', true)" class="px-2 py-1 rounded bg-slate-500 text-white text-xs font-medium hover:bg-slate-600 whitespace-nowrap">재고 수정</button>' + '<button type="button" onclick="deleteBrochure(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700 whitespace-nowrap">삭제</button></div></td>';
+                    return brochureThumbTd(brochure) + '<td class="py-3 px-4">' + (brochure.name || '') + '</td><td class="py-3 px-4 text-right ' + warehouseClass + '">' + warehouseStock + '권</td><td class="py-3 px-4 text-center"><span class="font-medium ' + warehouseStatus.color + '">' + warehouseStatus.text + '</span></td><td class="py-3 px-4">' + (lastStockQuantity > 0 ? lastStockQuantity + '권 (' + lastStockDate + ')' : '-') + '</td><td class="py-3 px-4 text-center"><button type="button" onclick="openStockModal(\'' + brochure.id + '\', true)" class="px-2 py-1 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700 whitespace-nowrap">입고</button></td><td class="py-3 px-4"><div class="flex flex-wrap gap-1 justify-center">' + '<button type="button" onclick="openBrochureImageMenu(event, \'' + brochure.id + '\')" class="px-2 py-1 rounded bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 whitespace-nowrap">이미지 관리</button>' + '<button type="button" onclick="openTransferToHqModal(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 whitespace-nowrap">→ 본사</button>' + '<button type="button" onclick="openStockEditModal(\'' + brochure.id + '\', true)" class="px-2 py-1 rounded bg-slate-500 text-white text-xs font-medium hover:bg-slate-600 whitespace-nowrap">재고 수정</button>' + '<button type="button" onclick="deleteBrochure(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700 whitespace-nowrap">삭제</button></div></td>';
                 };
                 const rowHtmlHq = function(brochure) {
                     const hqStock = brochure.stock ?? 0;
@@ -952,7 +958,7 @@
                     const hqStatus = stockStatusText(hqStock, 'hq');
                     const lastStockQuantity = brochure.last_stock_quantity ?? 0;
                     const lastStockDate = brochure.last_stock_date || '-';
-                    return brochureThumbTd(brochure) + '<td class="py-3 px-4">' + (brochure.name || '') + '</td><td class="py-3 px-4 text-right ' + hqClass + '">' + hqStock + '권</td><td class="py-3 px-4 text-center"><span class="font-medium ' + hqStatus.color + '">' + hqStatus.text + '</span></td><td class="py-3 px-4">' + (lastStockQuantity > 0 ? lastStockQuantity + '권 (' + lastStockDate + ')' : '-') + '</td><td class="py-3 px-4 text-center"><button type="button" onclick="openStockModal(\'' + brochure.id + '\', false)" class="px-2 py-1 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700 whitespace-nowrap">입고</button></td><td class="py-3 px-4"><div class="flex flex-wrap gap-1 justify-center">' + '<button type="button" onclick="triggerBrochureImageUpload(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 whitespace-nowrap">이미지</button>' + '<button type="button" onclick="deleteBrochureImage(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-slate-600 text-white text-xs font-medium hover:bg-slate-700 whitespace-nowrap">이미지 삭제</button>' + '<button type="button" onclick="openStockEditModal(\'' + brochure.id + '\', false)" class="px-2 py-1 rounded bg-slate-500 text-white text-xs font-medium hover:bg-slate-600 whitespace-nowrap">재고 수정</button>' + '<button type="button" onclick="deleteBrochure(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700 whitespace-nowrap">삭제</button></div></td>';
+                    return brochureThumbTd(brochure) + '<td class="py-3 px-4">' + (brochure.name || '') + '</td><td class="py-3 px-4 text-right ' + hqClass + '">' + hqStock + '권</td><td class="py-3 px-4 text-center"><span class="font-medium ' + hqStatus.color + '">' + hqStatus.text + '</span></td><td class="py-3 px-4">' + (lastStockQuantity > 0 ? lastStockQuantity + '권 (' + lastStockDate + ')' : '-') + '</td><td class="py-3 px-4 text-center"><button type="button" onclick="openStockModal(\'' + brochure.id + '\', false)" class="px-2 py-1 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700 whitespace-nowrap">입고</button></td><td class="py-3 px-4"><div class="flex flex-wrap gap-1 justify-center">' + '<button type="button" onclick="openBrochureImageMenu(event, \'' + brochure.id + '\')" class="px-2 py-1 rounded bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 whitespace-nowrap">이미지 관리</button>' + '<button type="button" onclick="openStockEditModal(\'' + brochure.id + '\', false)" class="px-2 py-1 rounded bg-slate-500 text-white text-xs font-medium hover:bg-slate-600 whitespace-nowrap">재고 수정</button>' + '<button type="button" onclick="deleteBrochure(\'' + brochure.id + '\')" class="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700 whitespace-nowrap">삭제</button></div></td>';
                 };
                 brochures.forEach(brochure => {
                     const trClass = 'border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50';
@@ -1384,6 +1390,38 @@
             } catch (err) { showAlert('브로셔 저장 중 오류: ' + err.message, 'danger'); }
         });
 
+        function openBrochureImageMenu(ev, brochureId) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            window._brochureImageMenuId = brochureId;
+            var dd = document.getElementById('brochureImageMenuDropdown');
+            if (!dd) return;
+            var rect = ev.currentTarget.getBoundingClientRect();
+            dd.style.left = rect.left + 'px';
+            dd.style.top = (rect.bottom + 4) + 'px';
+            dd.classList.remove('hidden');
+        }
+        function closeBrochureImageMenu() {
+            var dd = document.getElementById('brochureImageMenuDropdown');
+            if (dd) dd.classList.add('hidden');
+        }
+        document.addEventListener('click', function(e) {
+            var dd = document.getElementById('brochureImageMenuDropdown');
+            if (!dd || dd.classList.contains('hidden')) return;
+            if (dd.contains(e.target)) return;
+            if (e.target.closest && e.target.closest('[onclick*="openBrochureImageMenu"]')) return;
+            closeBrochureImageMenu();
+        });
+        document.getElementById('brochureImageMenuUpload').addEventListener('click', function() {
+            var id = window._brochureImageMenuId;
+            closeBrochureImageMenu();
+            if (id) triggerBrochureImageUpload(id);
+        });
+        document.getElementById('brochureImageMenuDelete').addEventListener('click', function() {
+            var id = window._brochureImageMenuId;
+            closeBrochureImageMenu();
+            if (id) deleteBrochureImage(id);
+        });
         function triggerBrochureImageUpload(brochureId) {
             window._brochureImageUploadId = brochureId;
             document.getElementById('brochureRowImageFile').value = '';

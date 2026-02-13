@@ -43,4 +43,17 @@ return [
         'webhook_url' => env('TEAMS_WEBHOOK_URL'),
     ],
 
+    /*
+    | Solapi (문자 인증번호 발송)
+    | 콘솔: https://console.solapi.com/credentials
+    | from: 등록된 발신번호 (숫자만, 예: 01012345678)
+    */
+    'solapi' => [
+        'key' => env('SOLAPI_API_KEY'),
+        'secret' => env('SOLAPI_API_SECRET'),
+        'from' => env('SOLAPI_FROM'),
+        'kakao_pf_id' => env('SOLAPI_KAKAO_PF_ID'),
+        'kakao_otp_template_id' => env('SOLAPI_KAKAO_OTP_TEMPLATE_ID'),
+    ],
+
 ];
