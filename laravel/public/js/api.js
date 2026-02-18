@@ -12,7 +12,7 @@ async function apiCall(endpoint, method = 'GET', data = null, fetchOpts = {}) {
     const isFormData = data instanceof FormData;
     const options = { ...fetchOpts, method, headers: { 'Accept': 'application/json', ...(fetchOpts.headers || {}) } };
     if (!isFormData) options.headers['Content-Type'] = 'application/json';
-    if (data && (method === 'POST' || method === 'PUT')) options.body = isFormData ? data : JSON.stringify(data);
+    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) options.body = isFormData ? data : JSON.stringify(data);
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
         if (!response.ok) {
@@ -102,6 +102,21 @@ const VerificationAPI = {
     sendCode: (phone) => apiCall('/verification/send', 'POST', { phone }),
     verify: (phone, code) => apiCall('/verification/verify', 'POST', { phone, code })
 };
+const InstitutionAPI = {
+    getList: (page, params) => {
+        var q = new URLSearchParams();
+        if (page) q.set('page', String(page));
+        if (params && params.search) q.set('search', params.search);
+        if (params && params.is_active !== undefined && params.is_active !== '') q.set('is_active', String(params.is_active));
+        var query = q.toString();
+        return apiCall('/admin/institutions' + (query ? '?' + query : ''));
+    },
+    getOne: (id) => apiCall('/admin/institutions/' + id),
+    create: (data) => apiCall('/admin/institutions', 'POST', data),
+    update: (id, data) => apiCall('/admin/institutions/' + id, 'PUT', data),
+    delete: (id) => apiCall('/admin/institutions/' + id, 'DELETE'),
+    bulkSetActive: (ids, isActive) => apiCall('/admin/institutions/bulk', 'PATCH', { ids: ids, is_active: !!isActive })
+};
 
 window.BrochureAPI = BrochureAPI;
 window.ContactAPI = ContactAPI;
@@ -109,3 +124,13 @@ window.RequestAPI = RequestAPI;
 window.StockHistoryAPI = StockHistoryAPI;
 window.AdminAPI = AdminAPI;
 window.VerificationAPI = VerificationAPI;
+window.InstitutionAPI = InstitutionAPI;
+
+/** Public: fetch institutions for autocomplete (active only). search optional. */
+async function fetchInstitutionsForAutocomplete(search) {
+    const q = new URLSearchParams();
+    if (search && String(search).trim()) q.set('search', String(search).trim());
+    const query = q.toString();
+    return apiCall('/institutions' + (query ? '?' + query : ''));
+}
+window.fetchInstitutionsForAutocomplete = fetchInstitutionsForAutocomplete;

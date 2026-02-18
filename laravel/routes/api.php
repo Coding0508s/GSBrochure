@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\StockHistoryController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\ResetDataController;
 use App\Http\Controllers\Api\VerificationController;
+use App\Http\Controllers\Api\InstitutionController;
 
 Route::get('/health', [BrochureController::class, 'health']);
 
@@ -40,9 +41,17 @@ Route::delete('requests/{id}/invoices', [RequestController::class, 'deleteInvoic
 Route::get('stock-history', [StockHistoryController::class, 'index']);
 Route::post('stock-history', [StockHistoryController::class, 'store']);
 
+Route::get('institutions', [InstitutionController::class, 'listPublic']);
+
 Route::post('admin/login', [AdminController::class, 'login']);
 Route::get('admin/users', [AdminController::class, 'users']);
 Route::post('admin/users', [AdminController::class, 'createUser']);
 Route::put('admin/users/{id}/password', [AdminController::class, 'changePassword']);
 Route::delete('admin/users/{id}', [AdminController::class, 'deleteUser']);
 Route::post('admin/reset', [ResetDataController::class, 'reset']);
+Route::get('admin/institutions', [InstitutionController::class, 'index']);
+Route::patch('admin/institutions/bulk', [InstitutionController::class, 'bulkUpdateIsActive']);
+Route::get('admin/institutions/{id}', [InstitutionController::class, 'show']);
+Route::post('admin/institutions', [InstitutionController::class, 'store']);
+Route::put('admin/institutions/{id}', [InstitutionController::class, 'update']);
+Route::delete('admin/institutions/{id}', [InstitutionController::class, 'destroy']);

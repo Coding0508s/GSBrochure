@@ -106,6 +106,10 @@
                             </a>
                         </div>
                     </div>
+                    <a href="#" data-nav="institutions" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                        <span class="material-symbols-outlined" style="font-size: 24px;">business</span>
+                        <span class="text-sm font-medium">기관 관리</span>
+                    </a>
                     <a href="#" data-nav="settings" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         <span class="material-symbols-outlined" style="font-size: 24px;">settings</span>
                         <span class="text-sm font-medium">설정</span>
@@ -386,6 +390,58 @@
                 </form>
             </section>
 
+            <!-- Institutions Section (기관 관리) -->
+            <section id="section-institutions" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden min-w-0">
+                <div class="space-y-6">
+                    <div>
+                        <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+                            <h2 class="text-xl font-bold text-slate-900 dark:text-white">기관 목록</h2>
+                            <button type="button" onclick="openInstitutionModal()" class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg text-sm font-medium text-white transition-colors">+ 기관 추가</button>
+                        </div>
+                        <div class="flex flex-wrap gap-3 items-end mb-4">
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <input type="text" id="institutionSearch" placeholder="기관명 검색" class="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm min-w-[180px]" onkeydown="if(event.key==='Enter')applyInstitutionFilters()">
+                                <select id="institutionFilter" onchange="applyInstitutionFilters()" class="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm">
+                                    <option value="">전체</option>
+                                    <option value="1">활성</option>
+                                    <option value="0">비활성</option>
+                                </select>
+                                <button type="button" onclick="applyInstitutionFilters()" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium">검색</button>
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="bulkInstitutionSetActive(true)" class="px-3 py-2 rounded-lg border border-green-600 dark:border-green-500 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 text-sm font-medium">선택 항목 활성화</button>
+                                <button type="button" onclick="bulkInstitutionSetActive(false)" class="px-3 py-2 rounded-lg border border-slate-400 dark:border-slate-500 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium">선택 항목 비활성화</button>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                            <div id="institutionsLoading" class="p-6 text-center text-slate-500 dark:text-slate-400 text-sm">불러오는 중...</div>
+                            <table class="w-full text-sm hidden" id="institutionsTable">
+                                <thead>
+                                    <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                                        <th class="w-10 py-3 px-2 text-center">
+                                            <input type="checkbox" id="institutionSelectAll" title="전체 선택" class="rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary">
+                                        </th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">기관명</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">유형</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">설명</th>
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">주소</th>
+                                        <th class="text-center py-3 px-4 font-medium text-slate-700 dark:text-slate-300">상태</th>
+                                        <th class="text-right py-3 px-4 font-medium text-slate-700 dark:text-slate-300">정렬</th>
+                                        <th class="text-center py-3 px-4 font-medium text-slate-700 dark:text-slate-300">작업</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="institutionsTableBody"></tbody>
+                            </table>
+                            <p id="institutionsEmpty" class="hidden p-6 text-center text-slate-500 dark:text-slate-400 text-sm">등록된 기관이 없습니다.</p>
+                            <div id="institutionsPagination" class="hidden flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                                <p id="institutionsPaginationInfo" class="text-sm text-slate-600 dark:text-slate-400"></p>
+                                <div id="institutionsPaginationButtons" class="flex items-center gap-1"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Settings Section -->
             <section id="section-settings" class="content-section px-4 sm:px-8 py-4 sm:py-6 hidden">
                 <div class="space-y-8">
@@ -527,6 +583,51 @@
         style="left: 0; top: 0;">
         <button type="button" id="brochureImageMenuUpload" class="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 whitespace-nowrap">이미지 업로드</button>
         <button type="button" id="brochureImageMenuDelete" class="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 whitespace-nowrap">이미지 삭제</button>
+    </div>
+
+    <div id="institutionModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-modal="true">
+        <div class="fixed inset-0 bg-black/50 transition-opacity" onclick="closeInstitutionModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white dark:bg-[#1e1e1e] rounded-xl shadow-xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="institutionModalTitle" class="text-lg font-bold text-slate-900 dark:text-white">기관 추가</h3>
+                    <button type="button" onclick="closeInstitutionModal()" class="text-slate-400 hover:text-slate-600">&times;</button>
+                </div>
+                <form id="institutionForm">
+                    <input type="hidden" id="institutionId" value="">
+                    <div class="form-group mb-4">
+                        <label for="institutionName" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">기관명</label>
+                        <input type="text" id="institutionName" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"/>
+                    </div>
+                    <div class="form-group mb-4">
+                        <label for="institutionType" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">유형 (선택)</label>
+                        <input type="text" id="institutionType" placeholder="예: academy, kindergarten" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"/>
+                    </div>
+                    <div class="form-group mb-4">
+                        <label for="institutionAddress" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">주소 (선택)</label>
+                        <input type="text" id="institutionAddress" placeholder="주소를 입력하세요" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"/>
+                    </div>
+                    <div class="form-group mb-4">
+                        <label for="institutionDescription" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">설명 (선택)</label>
+                        <textarea id="institutionDescription" rows="3" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"></textarea>
+                    </div>
+                    <div class="form-group mb-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="institutionIsActive" checked class="rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary"/>
+                            <span class="text-sm font-medium text-slate-700 dark:text-slate-300">활성</span>
+                        </label>
+                    </div>
+                    <div class="form-group mb-4">
+                        <label for="institutionSortOrder" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">정렬 순서</label>
+                        <input type="number" id="institutionSortOrder" min="0" value="0" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"/>
+                    </div>
+                    <div class="flex gap-2 justify-end mt-6">
+                        <button type="button" onclick="closeInstitutionModal()" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">취소</button>
+                        <button type="submit" class="px-4 py-2 bg-primary hover:bg-primary/90 rounded-lg text-sm font-medium text-white">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <div id="contactModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-modal="true">
@@ -774,7 +875,7 @@
                     }
                 });
             }
-            var pageTitleText = { dashboard: '대시보드 개요', inventory: '물류센터 브로셔 재고관리', inventory2: '본사 브로셔 재고관리', logistics: '운송장 입력', outbound: '입출고 내역', settings: '설정' }[sectionId];
+            var pageTitleText = { dashboard: '대시보드 개요', inventory: '물류센터 브로셔 재고관리', inventory2: '본사 브로셔 재고관리', logistics: '운송장 입력', outbound: '입출고 내역', institutions: '기관 관리', settings: '설정' }[sectionId];
             if (sectionId === 'outbound' && lastOutboundScroll === 'warehouse') pageTitleText = '물류센터 입출고 내역';
             if (sectionId === 'outbound' && lastOutboundScroll === 'hq') pageTitleText = '본사 입출고 내역';
             const t = document.getElementById('pageTitle');
@@ -786,6 +887,7 @@
             if (sectionId === 'logistics') loadSavedRequests();
             if (sectionId === 'outbound') loadOutboundHistory();
             if (sectionId === 'inventory2') loadBrochures();
+            if (sectionId === 'institutions') loadInstitutions();
         }
 
         function applyOutboundBlockVisibility() {
@@ -1726,6 +1828,178 @@
                 showAlert('관리자 계정을 불러오는 중 오류가 발생했습니다.', 'danger');
             }
         }
+
+        function getInstitutionFilters() {
+            var searchEl = document.getElementById('institutionSearch');
+            var filterEl = document.getElementById('institutionFilter');
+            return {
+                search: (searchEl && searchEl.value) ? searchEl.value.trim() : '',
+                is_active: (filterEl && filterEl.value) !== undefined ? filterEl.value : ''
+            };
+        }
+        function applyInstitutionFilters() {
+            loadInstitutions(1);
+        }
+        async function bulkInstitutionSetActive(active) {
+            var checkboxes = document.querySelectorAll('#institutionsTableBody .institution-row-cb:checked');
+            var ids = [];
+            checkboxes.forEach(function(cb) { ids.push(parseInt(cb.getAttribute('data-id'), 10)); });
+            if (ids.length === 0) {
+                showAlert('활성/비활성 변경할 기관을 선택해 주세요.', 'danger');
+                return;
+            }
+            try {
+                var res = await InstitutionAPI.bulkSetActive(ids, active);
+                showAlert(res && res.message ? res.message : (active ? '선택 기관이 활성화되었습니다.' : '선택 기관이 비활성화되었습니다.'));
+                var cur = window._institutionsPagination && window._institutionsPagination.current_page || 1;
+                loadInstitutions(cur);
+            } catch (err) {
+                showAlert(err.message || '일괄 변경에 실패했습니다.', 'danger');
+            }
+        }
+        async function loadInstitutions(page) {
+            page = parseInt(page, 10) || 1;
+            var filters = getInstitutionFilters();
+            var loadingEl = document.getElementById('institutionsLoading');
+            var tableEl = document.getElementById('institutionsTable');
+            var tbodyEl = document.getElementById('institutionsTableBody');
+            var emptyEl = document.getElementById('institutionsEmpty');
+            var paginationEl = document.getElementById('institutionsPagination');
+            var paginationInfoEl = document.getElementById('institutionsPaginationInfo');
+            var paginationBtnsEl = document.getElementById('institutionsPaginationButtons');
+            var selectAllEl = document.getElementById('institutionSelectAll');
+            if (!loadingEl || !tableEl || !tbodyEl || !emptyEl) return;
+            loadingEl.classList.remove('hidden');
+            tableEl.classList.add('hidden');
+            emptyEl.classList.add('hidden');
+            if (paginationEl) paginationEl.classList.add('hidden');
+            if (selectAllEl) selectAllEl.checked = false;
+            try {
+                var res = await InstitutionAPI.getList(page, filters);
+                var list = res && res.data ? res.data : [];
+                var currentPage = res && res.current_page != null ? res.current_page : 1;
+                var lastPage = res && res.last_page != null ? res.last_page : 1;
+                var total = res && res.total != null ? res.total : 0;
+                var perPage = res && res.per_page != null ? res.per_page : 20;
+                loadingEl.classList.add('hidden');
+                tbodyEl.innerHTML = '';
+                if (!list || list.length === 0) {
+                    if (currentPage > 1 && lastPage > 1) {
+                        loadInstitutions(currentPage - 1);
+                        return;
+                    }
+                    emptyEl.classList.remove('hidden');
+                    if (paginationEl) paginationEl.classList.add('hidden');
+                    return;
+                }
+                tableEl.classList.remove('hidden');
+                window._institutionsList = list;
+                window._institutionsPagination = { current_page: currentPage, last_page: lastPage, total: total, per_page: perPage };
+                list.forEach(function(inst) {
+                    var tr = document.createElement('tr');
+                    tr.className = 'border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50';
+                    var typeText = (inst.type || '').trim() || '-';
+                    var descText = (inst.description || '').trim() ? (inst.description.length > 50 ? inst.description.slice(0, 50) + '…' : inst.description) : '-';
+                    var addrText = (inst.address || '').trim() ? (inst.address.length > 40 ? inst.address.slice(0, 40) + '…' : inst.address) : '-';
+                    var statusText = inst.is_active ? '활성' : '비활성';
+                    var statusClass = inst.is_active ? 'text-green-600 dark:text-green-400' : 'text-slate-500 dark:text-slate-400';
+                    var cb = '<td class="w-10 py-3 px-2 text-center"><input type="checkbox" class="institution-row-cb rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary" data-id="' + inst.id + '"></td>';
+                    tr.innerHTML = cb + '<td class="py-3 px-4 font-medium text-slate-900 dark:text-white">' + (inst.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</td><td class="py-3 px-4 text-slate-600 dark:text-slate-300">' + (typeText === '-' ? '-' : typeText.replace(/</g, '&lt;').replace(/>/g, '&gt;')) + '</td><td class="py-3 px-4 text-slate-600 dark:text-slate-300">' + (descText === '-' ? '-' : descText.replace(/</g, '&lt;').replace(/>/g, '&gt;')) + '</td><td class="py-3 px-4 text-slate-600 dark:text-slate-300 max-w-[200px] truncate" title="' + (inst.address || '').replace(/"/g, '&quot;') + '">' + (addrText === '-' ? '-' : addrText.replace(/</g, '&lt;').replace(/>/g, '&gt;')) + '</td><td class="py-3 px-4 text-center"><span class="' + statusClass + '">' + statusText + '</span></td><td class="py-3 px-4 text-right text-slate-600 dark:text-slate-400">' + (inst.sort_order != null ? inst.sort_order : '') + '</td><td class="py-3 px-4 text-center"><button type="button" onclick="editInstitution(' + inst.id + ')" class="px-2 py-1 rounded bg-primary text-white text-xs font-medium hover:bg-primary/90 mr-1">수정</button><button type="button" onclick="deleteInstitution(' + inst.id + ')" class="px-2 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700">삭제</button></td>';
+                    tbodyEl.appendChild(tr);
+                });
+                if (selectAllEl) {
+                    selectAllEl.onclick = function() {
+                        document.querySelectorAll('#institutionsTableBody .institution-row-cb').forEach(function(cb) { cb.checked = selectAllEl.checked; });
+                    };
+                }
+                if (paginationEl && paginationInfoEl && paginationBtnsEl && lastPage > 1) {
+                    var from = (currentPage - 1) * perPage + 1;
+                    var to = Math.min(currentPage * perPage, total);
+                    paginationInfoEl.textContent = '총 ' + total + '개 (현재 ' + from + '–' + to + ' / 페이지당 ' + perPage + '개)';
+                    var html = '';
+                    if (currentPage > 1) html += '<button type="button" onclick="loadInstitutions(' + (currentPage - 1) + ')" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm font-medium">이전</button>';
+                    var start = Math.max(1, currentPage - 2);
+                    var end = Math.min(lastPage, currentPage + 2);
+                    for (var p = start; p <= end; p++) {
+                        if (p === currentPage) html += '<button type="button" class="px-3 py-1.5 rounded-lg bg-primary text-white text-sm font-medium">' + p + '</button>';
+                        else html += '<button type="button" onclick="loadInstitutions(' + p + ')" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm font-medium">' + p + '</button>';
+                    }
+                    if (currentPage < lastPage) html += '<button type="button" onclick="loadInstitutions(' + (currentPage + 1) + ')" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm font-medium">다음</button>';
+                    paginationBtnsEl.innerHTML = html;
+                    paginationEl.classList.remove('hidden');
+                } else if (total > 0 && paginationEl && paginationInfoEl) {
+                    paginationInfoEl.textContent = '총 ' + total + '개 (페이지당 ' + perPage + '개)';
+                    paginationEl.classList.remove('hidden');
+                }
+            } catch (err) {
+                loadingEl.classList.add('hidden');
+                console.error(err);
+                showAlert('기관 목록을 불러오는 중 오류가 발생했습니다.', 'danger');
+            }
+        }
+
+        function openInstitutionModal(inst) {
+            var modal = document.getElementById('institutionModal');
+            var title = document.getElementById('institutionModalTitle');
+            document.getElementById('institutionId').value = inst ? inst.id : '';
+            document.getElementById('institutionName').value = inst ? (inst.name || '') : '';
+            document.getElementById('institutionType').value = inst ? (inst.type || '') : '';
+            document.getElementById('institutionAddress').value = inst ? (inst.address || '') : '';
+            document.getElementById('institutionDescription').value = inst ? (inst.description || '') : '';
+            document.getElementById('institutionIsActive').checked = inst ? !!inst.is_active : true;
+            document.getElementById('institutionSortOrder').value = inst != null && inst.sort_order != null ? inst.sort_order : 0;
+            if (title) title.textContent = inst ? '기관 수정' : '기관 추가';
+            if (modal) modal.classList.remove('hidden');
+        }
+        function closeInstitutionModal() {
+            document.getElementById('institutionModal').classList.add('hidden');
+        }
+        async function editInstitution(id) {
+            var list = window._institutionsList || [];
+            var inst = list.find(function(i) { return i.id == id; });
+            if (inst) { openInstitutionModal(inst); return; }
+            try {
+                inst = await InstitutionAPI.getOne(id);
+                if (inst) openInstitutionModal(inst);
+            } catch (e) { showAlert('기관 정보를 불러오는 중 오류가 발생했습니다.', 'danger'); }
+        }
+        document.getElementById('institutionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            var idEl = document.getElementById('institutionId');
+            var id = (idEl && idEl.value) ? idEl.value.trim() : '';
+            var payload = {
+                name: (document.getElementById('institutionName').value || '').trim(),
+                type: (document.getElementById('institutionType').value || '').trim() || null,
+                address: (document.getElementById('institutionAddress').value || '').trim() || null,
+                description: (document.getElementById('institutionDescription').value || '').trim() || null,
+                is_active: document.getElementById('institutionIsActive').checked,
+                sort_order: parseInt(document.getElementById('institutionSortOrder').value, 10) || 0
+            };
+            try {
+                if (id) {
+                    await InstitutionAPI.update(id, payload);
+                    showAlert('기관이 수정되었습니다.');
+                } else {
+                    await InstitutionAPI.create(payload);
+                    showAlert('기관이 추가되었습니다.');
+                }
+                closeInstitutionModal();
+                loadInstitutions(window._institutionsPagination && window._institutionsPagination.current_page || 1);
+            } catch (err) {
+                showAlert(err.message || '저장에 실패했습니다.', 'danger');
+            }
+        });
+        async function deleteInstitution(id) {
+            if (!confirm('이 기관을 삭제하시겠습니까?')) return;
+            try {
+                await InstitutionAPI.delete(id);
+                showAlert('기관이 삭제되었습니다.');
+                loadInstitutions(window._institutionsPagination && window._institutionsPagination.current_page || 1);
+            } catch (err) {
+                showAlert(err.message || '삭제에 실패했습니다.', 'danger');
+            }
+        }
+
         document.getElementById('addAdminForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             var username = document.getElementById('newUsername').value;

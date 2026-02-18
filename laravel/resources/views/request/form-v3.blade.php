@@ -12,6 +12,21 @@
 
     <div id="alertV2" class="max-w-5xl mx-auto mb-6 hidden rounded-lg border p-4" role="alert"></div>
 
+    <!-- 주소 검증 모달 -->
+    <div id="addressConfirmModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-modal="true">
+        <div class="fixed inset-0 bg-black/50 transition-opacity" onclick="closeAddressConfirmModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6 border border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">주소 확인</h3>
+                <p id="addressConfirmMessage" class="text-sm text-gray-600 dark:text-gray-300 mb-4"></p>
+                <div id="addressConfirmValue" class="hidden mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm text-gray-800 dark:text-gray-200 break-words"></div>
+                <div class="flex justify-end">
+                    <button type="button" id="addressConfirmBtn" class="px-4 py-2 rounded-lg bg-primary hover:bg-purple-800 text-white text-sm font-medium">확인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <form class="max-w-5xl mx-auto space-y-8" id="brochureFormV2" method="post" action="#">
         @csrf
         <!-- 1. 배송 정보 (신청·배송 통합) -->
@@ -28,9 +43,10 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="request-date">신청일</label>
                         <input class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5" id="request-date" name="request_date" type="date" required/>
                     </div>
-                    <div class="space-y-2">
+                    <div class="space-y-2 relative" id="org-name-wrap">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="org-name">기관명</label>
-                        <input class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5" id="org-name" name="org_name" placeholder="기관명을 입력하세요" type="text" required/>
+                        <input class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5" id="org-name" name="org_name" placeholder="기관명을 입력하세요" type="text" required autocomplete="off"/>
+                        <ul id="org-name-dropdown" class="hidden absolute z-20 left-0 right-0 mt-1 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-52 overflow-y-auto" role="listbox"></ul>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -265,15 +281,126 @@
         }
     }
 
+    function initOrgNameAutocomplete() {
+        var input = document.getElementById('org-name');
+        var dropdown = document.getElementById('org-name-dropdown');
+        var wrap = document.getElementById('org-name-wrap');
+        if (!input || !dropdown || !wrap) return;
+        var debounceTimer = null;
+        function showDropdown(items) {
+            dropdown.innerHTML = '';
+            if (!items || items.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+            items.forEach(function(item) {
+                var li = document.createElement('li');
+                li.setAttribute('role', 'option');
+                li.className = 'px-4 py-2.5 text-sm text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer';
+                li.textContent = item.name || '';
+                li.dataset.name = item.name || '';
+                li.dataset.address = item.address || '';
+                li.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    input.value = item.name || '';
+                    var addressEl = document.getElementById('address');
+                    var addressVal = (item.address || '').trim();
+                    if (addressEl) addressEl.value = addressVal;
+                    dropdown.classList.add('hidden');
+                    window.addressConfirmed = false;
+                    var modal = document.getElementById('addressConfirmModal');
+                    var msgEl = document.getElementById('addressConfirmMessage');
+                    var valueWrap = document.getElementById('addressConfirmValue');
+                    if (modal && msgEl && valueWrap) {
+                        if (!addressVal) {
+                            msgEl.textContent = '배송 주소를 입력해 주세요.';
+                            valueWrap.classList.add('hidden');
+                            valueWrap.textContent = '';
+                        } else {
+                            msgEl.textContent = '입력하신 배송 주소를 확인해 주세요.';
+                            valueWrap.textContent = addressVal;
+                            valueWrap.classList.remove('hidden');
+                        }
+                        modal.classList.remove('hidden');
+                    }
+                    input.focus();
+                });
+                dropdown.appendChild(li);
+            });
+            dropdown.classList.remove('hidden');
+        }
+        function hideDropdown() {
+            dropdown.classList.add('hidden');
+        }
+        function fetchAndShow() {
+            var q = (input.value || '').trim();
+            if (typeof window.fetchInstitutionsForAutocomplete !== 'function') return;
+            window.fetchInstitutionsForAutocomplete(q).then(function(list) {
+                showDropdown(Array.isArray(list) ? list : []);
+            }).catch(function() {
+                showDropdown([]);
+            });
+        }
+        input.addEventListener('focus', function() {
+            fetchAndShow();
+        });
+        input.addEventListener('input', function() {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(fetchAndShow, 200);
+        });
+        input.addEventListener('blur', function() {
+            debounceTimer = setTimeout(hideDropdown, 150);
+        });
+        dropdown.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+        });
+        document.addEventListener('click', function(e) {
+            if (wrap && !wrap.contains(e.target)) hideDropdown();
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         var dateEl = document.getElementById('request-date');
         if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
         loadBrochureCards();
         loadContactOptions();
+        initOrgNameAutocomplete();
     });
 
     var phoneEl = document.getElementById('phone');
-    if (phoneEl) phoneEl.addEventListener('input', function() { formatPhoneNumberV2(this); });
+    if (phoneEl) {
+        phoneEl.addEventListener('focus', function() {
+            if (window.addressConfirmed) return;
+            var addressEl = document.getElementById('address');
+            var addressVal = (addressEl && addressEl.value) ? addressEl.value.trim() : '';
+            var modal = document.getElementById('addressConfirmModal');
+            var msgEl = document.getElementById('addressConfirmMessage');
+            var valueWrap = document.getElementById('addressConfirmValue');
+            if (!modal || !msgEl || !valueWrap) return;
+            if (!addressVal) {
+                msgEl.textContent = '배송 주소를 입력해 주세요.';
+                valueWrap.classList.add('hidden');
+                valueWrap.textContent = '';
+            } else {
+                msgEl.textContent = '입력하신 배송 주소를 확인해 주세요.';
+                valueWrap.textContent = addressVal;
+                valueWrap.classList.remove('hidden');
+            }
+            modal.classList.remove('hidden');
+        });
+        phoneEl.addEventListener('input', function() { formatPhoneNumberV2(this); });
+    }
+    function closeAddressConfirmModal() {
+        window.addressConfirmed = true;
+        var modal = document.getElementById('addressConfirmModal');
+        if (modal) modal.classList.add('hidden');
+        var addressEl = document.getElementById('address');
+        var addressVal = (addressEl && addressEl.value) ? addressEl.value.trim() : '';
+        if (!addressVal) {
+            if (addressEl) addressEl.focus();
+        }
+    }
+    document.getElementById('addressConfirmBtn').addEventListener('click', closeAddressConfirmModal);
 
     document.getElementById('brochureFormV2').addEventListener('submit', async function(e) {
         e.preventDefault();

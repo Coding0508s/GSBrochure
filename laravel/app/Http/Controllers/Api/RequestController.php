@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\BrochureRequest;
+use App\Models\Institution;
 use App\Models\Invoice;
 use App\Models\RequestItem;
 use Illuminate\Http\JsonResponse;
@@ -104,6 +105,20 @@ class RequestController extends Controller
             'invoices.*' => 'string',
         ]);
         $invoices = $data['invoices'] ?? [];
+
+        $schoolnameTrimmed = trim($data['schoolname']);
+        $requestAddress = isset($data['address']) ? trim($data['address']) : null;
+        $institution = Institution::firstOrCreate(
+            ['name' => $schoolnameTrimmed],
+            [
+                'address' => $requestAddress,
+                'is_active' => true,
+                'sort_order' => 0,
+            ]
+        );
+        if (($institution->address === null || trim((string) $institution->address) === '') && $requestAddress !== null && $requestAddress !== '') {
+            $institution->update(['address' => $requestAddress]);
+        }
 
         DB::beginTransaction();
         try {
