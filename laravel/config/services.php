@@ -54,6 +54,8 @@ return [
         'from' => env('SOLAPI_FROM'),
         'kakao_pf_id' => env('SOLAPI_KAKAO_PF_ID'),
         'kakao_otp_template_id' => env('SOLAPI_KAKAO_OTP_TEMPLATE_ID'),
+        // 알림톡 템플릿 내 치환변수 키 (기본: #{인증번호})
+        'kakao_otp_variable' => env('SOLAPI_KAKAO_OTP_VARIABLE', '#{인증번호}'),
     ],
 
 ];

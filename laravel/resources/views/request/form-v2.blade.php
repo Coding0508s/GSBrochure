@@ -51,7 +51,7 @@
                             <span id="verify-code-wrap" class="hidden">
                                 <input class="block w-24 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5" id="verify-code" placeholder="6자리" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code"/>
                             </span>
-                            <button type="button" id="verify-btn" class="px-4 py-2.5 rounded-lg bg-primary hover:bg-purple-800 text-white text-sm font-medium transition-colors whitespace-nowrap shadow-sm">
+                            <button type="button" id="verify-btn" class="px-4 py-2.5 rounded-lg bg-primary hover:bg-purple-800 text-white text-sm font-medium transition-colors whitespace-nowrap shadow-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-primary">
                                 인증번호 발송
                             </button>
                             <span id="verify-status" class="text-sm text-gray-500 dark:text-gray-400"></span>
@@ -488,10 +488,11 @@
                         window.phoneVerified = true;
                         var submitBtn = document.getElementById('brochureSubmitBtn');
                         if (submitBtn) submitBtn.disabled = false;
+                        // 인증 완료 시 버튼 비활성화 유지
                     } catch (err) {
                         setVerifyStatus(err.message || '인증에 실패했습니다.', true);
+                        verifyBtn.disabled = false;
                     }
-                    verifyBtn.disabled = false;
                 }
             });
         }
@@ -505,6 +506,8 @@
                 window.phoneVerified = false;
                 var submitBtn = document.getElementById('brochureSubmitBtn');
                 if (submitBtn) submitBtn.disabled = true;
+                var verifyBtn = document.getElementById('verify-btn');
+                if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.textContent = '인증번호 발송'; }
             }
         });
     }
