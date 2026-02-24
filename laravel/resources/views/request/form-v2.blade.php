@@ -93,7 +93,7 @@
                     <span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold">2</span>
                     브로셔 선택 (Brochure Selection)
                 </h2>
-                <span class="text-sm text-purple-500 dark:text-purple-400 font-medium">* 브로셔를 선택하고 수량 입력 후 추가해 주세요</span>
+                <span class="text-sm text-purple-500 dark:text-purple-400 font-medium">* 브로셔를 선택하고 수량(10권 단위) 입력 후 추가해 주세요</span>
             </div>
             <div class="p-6 space-y-4">
                 <div class="flex flex-wrap gap-3 items-end">
@@ -115,8 +115,8 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">수량</label>
-                        <input type="number" id="brochureQuantity" min="1" value="1" class="w-24 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-center text-sm py-2 px-2 dark:text-white"/>
-                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">권</span>
+                        <input type="number" id="brochureQuantity" min="10" step="10" value="10" title="10권 단위" class="w-24 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-center text-sm py-2 px-2 dark:text-white"/>
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">권 (10권 단위)</span>
                     </div>
                     <button type="button" id="brochureAddBtn" class="px-4 py-2.5 rounded-lg bg-primary hover:bg-purple-800 text-white text-sm font-medium shrink-0">
                         추가
@@ -158,6 +158,13 @@
 (function() {
     window.BROCHURE_PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='267' viewBox='0 0 200 267'%3E%3Crect fill='%23e5e7eb' width='200' height='267'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='14' font-family='sans-serif'%3E%EC%9D%B4%EB%AF%B8%EC%A7%80%20%EC%97%86%EC%9D%8C%3C/text%3E%3C/svg%3E";
 
+    /** img src에 절대 undefined가 들어가지 않도록 보장 (GET /undefined 404 방지) */
+    function safeBrochureImageUrl(url) {
+        var placeholder = window.BROCHURE_PLACEHOLDER_IMG || '';
+        if (url === undefined || url === null || String(url).trim() === '' || String(url) === 'undefined') return placeholder;
+        return String(url).trim();
+    }
+
     function escapeHtml(s) {
         if (!s) return '';
         var div = document.createElement('div');
@@ -187,13 +194,13 @@
                 var id = b.id;
                 var name = (b.name || '').trim();
                 var nameEsc = escapeHtml(name);
-                var imgSrc = (b.image_url && String(b.image_url).trim()) ? b.image_url : window.BROCHURE_PLACEHOLDER_IMG;
+                var imgSrc = safeBrochureImageUrl(b.image_url);
                 var opt = document.createElement('button');
                 opt.type = 'button';
                 opt.className = 'flex items-center gap-3 p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-left w-full transition-colors brochure-dropdown-option';
                 opt.dataset.brochureId = id;
                 opt.dataset.brochureName = name;
-                opt.dataset.brochureImage = imgSrc || '';
+                opt.dataset.brochureImage = imgSrc;
                 opt.innerHTML = '<img src="' + escapeHtml(imgSrc) + '" alt="" class="w-14 h-20 object-cover rounded shrink-0" onerror="this.onerror=null;this.src=window.BROCHURE_PLACEHOLDER_IMG">' +
                     '<span class="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">' + nameEsc + '</span>';
                 optionsEl.appendChild(opt);
@@ -213,7 +220,7 @@
         if (!label) return;
         if (b) {
             if (thumb) {
-                thumb.src = b.image_url || window.BROCHURE_PLACEHOLDER_IMG;
+                thumb.src = safeBrochureImageUrl(b.image_url);
                 thumb.classList.remove('hidden');
             }
             label.textContent = b.name || '';
@@ -230,8 +237,8 @@
         }
         var qtyEl = document.getElementById('brochureQuantity');
         var qty = qtyEl ? (parseInt(qtyEl.value, 10) || 0) : 0;
-        if (qty < 1) {
-            showAlertV2('수량은 1 이상 입력해 주세요.', 'danger');
+        if (qty < 10 || qty % 10 !== 0) {
+            showAlertV2('수량은 10권 단위(10, 20, 30…)로 입력해 주세요.', 'danger');
             return;
         }
         var tbody = document.getElementById('brochureSelectedBody');
@@ -247,7 +254,7 @@
             '<td class="py-2 px-3 text-right text-gray-700 dark:text-gray-300">' + qty + '권</td>' +
             '<td class="py-2 px-2"><button type="button" class="brochure-remove-row text-red-600 dark:text-red-400 hover:underline text-xs">삭제</button></td>';
         tbody.appendChild(tr);
-        qtyEl.value = '1';
+        qtyEl.value = '10';
         setSelectedBrochure(null);
     }
 
@@ -272,7 +279,7 @@
         }
         var opt = e.target && e.target.closest && e.target.closest('.brochure-dropdown-option');
         if (!opt) return;
-        var imgSrc = opt.dataset.brochureImage || window.BROCHURE_PLACEHOLDER_IMG;
+        var imgSrc = safeBrochureImageUrl(opt.dataset.brochureImage);
         var name = opt.dataset.brochureName || '';
         var previewEl = document.getElementById('brochureHoverPreview');
         var previewImg = document.getElementById('brochureHoverPreviewImg');
@@ -650,6 +657,11 @@
         }
         if (brochures.length === 0) {
             showAlertV2('브로셔를 선택하고 수량을 입력해 주세요.', 'danger');
+            return;
+        }
+        var invalidQty = brochures.some(function(b) { var q = parseInt(b.quantity, 10) || 0; return q < 10 || q % 10 !== 0; });
+        if (invalidQty) {
+            showAlertV2('수량은 10권 단위(10, 20, 30…)로 입력해 주세요.', 'danger');
             return;
         }
         try {

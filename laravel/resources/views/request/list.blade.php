@@ -373,7 +373,7 @@
                         brochureEditHtml += `
                             <div class="brochure-item-edit flex gap-2 items-center mb-2" data-index="${index}">
                                 <select data-field="brochure" class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white sm:text-sm py-2 px-2">${optionsHtml}</select>
-                                <input type="number" data-field="quantity" value="${brochure.quantity}" min="1" class="w-24 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white sm:text-sm py-2 px-2">
+                                <input type="number" data-field="quantity" value="${brochure.quantity}" min="10" step="10" class="w-24 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white sm:text-sm py-2 px-2" title="10권 단위">
                                 <button type="button" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors" onclick="removeBrochureItem(this)">삭제</button>
                             </div>
                         `;
@@ -411,7 +411,7 @@
                 newItem.className = 'brochure-item-edit flex gap-2 items-center mb-2';
                 newItem.innerHTML = `
                     <select data-field="brochure" class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white sm:text-sm py-2 px-2">${optionsHtml}</select>
-                    <input type="number" data-field="quantity" value="1" min="1" class="w-24 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white sm:text-sm py-2 px-2">
+                    <input type="number" data-field="quantity" value="10" min="10" step="10" class="w-24 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white sm:text-sm py-2 px-2" title="10권 단위">
                     <button type="button" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors" onclick="removeBrochureItem(this)">삭제</button>
                 `;
                 const addBtn = container.lastElementChild;
@@ -456,6 +456,11 @@
 
             if (!schoolname || !address || !phone || !date || brochures.length === 0) {
                 alert('모든 필수 항목을 입력해주세요.');
+                return;
+            }
+            const invalidQty = brochures.some(b => { const q = parseInt(b.quantity, 10) || 0; return q < 10 || q % 10 !== 0; });
+            if (invalidQty) {
+                alert('수량은 10권 단위(10, 20, 30…)로 입력해 주세요.');
                 return;
             }
 

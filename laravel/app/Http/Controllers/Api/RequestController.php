@@ -100,7 +100,16 @@ class RequestController extends Controller
             'brochures' => 'required|array',
             'brochures.*.brochure' => 'required',
             'brochures.*.brochureName' => 'required|string',
-            'brochures.*.quantity' => 'required|integer|min:1',
+            'brochures.*.quantity' => [
+                'required',
+                'integer',
+                'min:10',
+                function ($attribute, $value, $fail) {
+                    if ((int) $value % 10 !== 0) {
+                        $fail('수량은 10권 단위로 입력해 주세요.');
+                    }
+                },
+            ],
             'invoices' => 'sometimes|array',
             'invoices.*' => 'string',
         ]);
@@ -247,7 +256,16 @@ class RequestController extends Controller
             'brochures' => 'sometimes|array',
             'brochures.*.brochure' => 'required',
             'brochures.*.brochureName' => 'required|string',
-            'brochures.*.quantity' => 'required|integer|min:1',
+            'brochures.*.quantity' => [
+                'required',
+                'integer',
+                'min:10',
+                function ($attribute, $value, $fail) {
+                    if ((int) $value % 10 !== 0) {
+                        $fail('수량은 10권 단위로 입력해 주세요.');
+                    }
+                },
+            ],
         ]);
         $req = BrochureRequest::findOrFail($id);
 

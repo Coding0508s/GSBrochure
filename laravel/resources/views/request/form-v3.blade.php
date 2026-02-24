@@ -143,7 +143,7 @@
                     '<label class="mt-2 block">' +
                     '<span class="sr-only">수량</span>' +
                     '<div class="flex items-center gap-2">' +
-                    '<input type="number" name="quantity[' + id + ']" min="0" value="0" placeholder="수량" class="brochure-qty flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2 px-3 text-center" data-brochure-id="' + id + '">' +
+                    '<input type="number" name="quantity[' + id + ']" min="0" step="10" value="0" placeholder="수량(10권 단위)" class="brochure-qty flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2 px-3 text-center" data-brochure-id="' + id + '">' +
                     '<span class="text-sm font-medium text-gray-700 dark:text-gray-300 shrink-0">권</span>' +
                     '</div>' +
                     '</label>';
@@ -418,6 +418,11 @@
         }
         if (brochures.length === 0) {
             showAlertV2('브로셔를 선택하고 수량을 입력해 주세요.', 'danger');
+            return;
+        }
+        var invalidQty = brochures.some(function(b) { var q = parseInt(b.quantity, 10) || 0; return q < 10 || q % 10 !== 0; });
+        if (invalidQty) {
+            showAlertV2('수량은 10권 단위(10, 20, 30…)로 입력해 주세요.', 'danger');
             return;
         }
         try {

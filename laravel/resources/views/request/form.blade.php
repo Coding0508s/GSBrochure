@@ -382,8 +382,8 @@
         const qtyCell = document.createElement('div');
         qtyCell.className = 'w-full sm:w-32 space-y-2';
         qtyCell.innerHTML = `
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="quantity-${itemId}">수량</label>
-            <input type="number" id="quantity-${itemId}" name="quantity-${itemId}" min="1" placeholder="수량" required class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="quantity-${itemId}">수량 (10권 단위)</label>
+            <input type="number" id="quantity-${itemId}" name="quantity-${itemId}" min="10" step="10" placeholder="10, 20, 30…" required class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5">
         `;
 
         brochureItem.appendChild(selectCell);
@@ -488,6 +488,11 @@
 
         if (!date || !schoolname || !address || !phone || brochures.length === 0) {
             showAlert('모든 필수 항목을 입력해주세요.', 'danger');
+            return;
+        }
+        const invalidQty = brochures.some(b => { const q = parseInt(b.quantity, 10) || 0; return q < 10 || q % 10 !== 0; });
+        if (invalidQty) {
+            showAlert('수량은 10권 단위(10, 20, 30…)로 입력해 주세요.', 'danger');
             return;
         }
 
