@@ -63,9 +63,8 @@
     @endphp
     <div class="flex min-h-screen">
        <!--  <aside class="w-64 bg-surface-light dark:bg-surface-dark border-r border-border-light dark:border-border-dark hidden md:flex flex-col fixed h-full z-10">
-            <div class="p-6 border-b border-border-light dark:border-border-dark flex items-center gap-3">
-                <span class="material-icons text-primary text-3xl">local_library</span>
-                <span class="font-bold text-lg text-primary tracking-tight">GrapeSEED</span>
+            <div class="p-6 border-b border-border-light dark:border-border-dark flex justify-center">
+                <img src="{{ asset('images/grapeseed-logo.png') }}" alt="GrapeSEED" class="max-h-16 w-auto object-contain" />
             </div>
             <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1">
                 <a class="flex items-center gap-3 px-4 py-3 text-sm font-medium {{ $navRequest ? 'bg-primary/10 text-primary rounded-lg dark:bg-primary/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors' }}" href="{{ url('requestbrochure') }}">

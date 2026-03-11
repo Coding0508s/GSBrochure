@@ -11,10 +11,12 @@
         .btn:hover { background-color: #0ca22c; }
     </style>
     @stack('styles')
+    @livewireStyles
 </head>
 <body>
     @yield('content')
     <script>window.API_BASE_URL = '{{ url("/api") }}';</script>
+    @livewireScripts
     @stack('scripts')
 </body>
 </html>

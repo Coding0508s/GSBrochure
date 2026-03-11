@@ -51,6 +51,21 @@
 <script>
     let rowCount = 0;
 
+    function openAddressSearch(inputId) {
+        if (typeof daum === 'undefined' || !daum.Postcode) {
+            showAlert('주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.', 'danger');
+            return;
+        }
+        new daum.Postcode({
+            oncomplete: function(data) {
+                const addr = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
+                const fullAddr = data.buildingName ? addr + ' ' + data.buildingName : addr;
+                const el = document.getElementById(inputId);
+                if (el) el.value = fullAddr;
+            }
+        }).open();
+    }
+
     async function loadBrochureOptions() {
         try {
             const raw = await BrochureAPI.getAll();
@@ -221,8 +236,11 @@
                     </div>
                     <div class="space-y-2 md:col-span-1">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="address-${rowCount}">주소</label>
-                        <input type="text" id="address-${rowCount}" name="address-${rowCount}" required
-                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5">
+                        <div class="flex gap-2">
+                            <input type="text" id="address-${rowCount}" name="address-${rowCount}" required placeholder="주소 검색"
+                                class="block flex-1 min-w-0 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5">
+                            <button type="button" onclick="openAddressSearch('address-${rowCount}')" class="shrink-0 px-3 py-2.5 rounded-lg bg-primary hover:bg-purple-800 text-white text-sm font-medium whitespace-nowrap">주소 검색</button>
+                        </div>
                     </div>
                 </div>
                 <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">

@@ -64,7 +64,10 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2 md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="address">주소</label>
-                        <input class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5" id="address" name="address" type="text" required/>
+                        <div class="flex gap-2">
+                            <input class="block flex-1 min-w-0 rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm focus:border-primary focus:ring-primary dark:text-white sm:text-sm py-2.5" id="address" name="address" type="text" required placeholder="주소 검색 버튼을 눌러 주소를 입력하세요"/>
+                            <button type="button" id="addressSearchBtn" class="shrink-0 px-4 py-2.5 rounded-lg bg-primary hover:bg-purple-800 text-white text-sm font-medium transition-colors whitespace-nowrap">주소 검색</button>
+                        </div>
                     </div>
                 </div>
                 <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">
@@ -113,6 +116,21 @@
         var div = document.createElement('div');
         div.textContent = s;
         return div.innerHTML;
+    }
+
+    function openPostcodeForAddress() {
+        if (typeof daum === 'undefined' || !daum.Postcode) {
+            showAlertV2('주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.', 'danger');
+            return;
+        }
+        new daum.Postcode({
+            oncomplete: function(data) {
+                var addr = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
+                if (data.buildingName) addr += ' ' + data.buildingName;
+                var el = document.getElementById('address');
+                if (el) el.value = addr;
+            }
+        }).open();
     }
 
     async function loadBrochureCards() {
@@ -362,6 +380,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         var dateEl = document.getElementById('request-date');
         if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+        var addressSearchBtn = document.getElementById('addressSearchBtn');
+        if (addressSearchBtn) addressSearchBtn.addEventListener('click', openPostcodeForAddress);
         loadBrochureCards();
         loadContactOptions();
         initOrgNameAutocomplete();
